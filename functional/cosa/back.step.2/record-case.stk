@@ -1,0 +1,39 @@
+;;;
+;;; record-case
+;;; just like ChezScheme record-case (I think)
+;;;
+
+(define-macro (record-case exp . clauses)
+  (let* ((var (if (symbol? exp) exp (gensym)))
+	 (make-bindings
+	   (letrec ((m-b (lambda (formals args)
+			   (cond
+			     ((null? formals)  '())
+			     ((pair? formals)
+			      (cons `(,(car formals) (car ,args))
+				(m-b (cdr formals) `(cdr ,args))))
+			     (else
+			       (list (list formals args)))))))
+	     (lambda (formals)
+	       (m-b formals `(cdr ,var)))))
+	 (make-let
+	   (lambda (formals bodies)
+	     (if (symbol? formals)
+	       `(let ((,formals (cdr ,var)))
+		  ,@bodies)
+	       `(let ,(make-bindings formals)
+		  ,@bodies))))
+	 (make-clause
+	   (lambda (clause)
+	     (if (eq? (car clause) 'else)
+	       clause
+	       `((,(if (symbol? (car clause)) 'eq? 'memq)
+		  (car ,var) ',(car clause))
+		 ,(make-let (cadr clause) (cddr clause))))))
+	 (make-cond
+	   (lambda ()
+	     `(cond ,@(map make-clause clauses)))))
+    (if (symbol? exp)
+      (make-cond)
+      `(let ((,var ,exp))
+	 ,(make-cond)))))
