@@ -1,0 +1,22 @@
+(define (b n m)
+  (car (bhat n m)))
+
+(define (bhat n m)
+  (if (= m 0)
+    (cons 1 '())
+    (if (= m n)
+      (cons 1 '())
+      (bhatprime n m (bhat (- n 1) m)))))
+
+(define (bhatprime n m r)
+  (if (= m 0)
+    (cons 1 '())
+    (if (= m n)
+      (cons 1 '())
+      (if (= m (- n 1))
+	(let ([v1 (bhatprime (- n 1) (- m 1) (cons 1 '()))])
+	  (cons (+ 1 (car v1)) (cons v1 '())))
+	(let ([v1 (bhatprime (- n 1) (- m 1) (car (cdr r)))])
+	  (cons (+ (car v1) (car r)) (cons v1 '())))))))
+
+'(b size size)
