@@ -1,0 +1,17 @@
+
+T[[v]] = <v, Tvar, []>
+
+T[[c]] = <c, Tc, []>
+
+T[[if e1 then e2 else e3]] =
+   let <v1, t1, p1> = T[[e1]] in
+      if unknown?(v1)
+	 let <v2, t2, p2> = T[[e2]],
+	     <v3, t3, p3> = T[[e3]] in
+	    if t2 > t3 then
+	       <lub(v2, v3), t1 + t2 + Tif, p1::path(e1)::p2>
+	    else
+	       <lub(v2, v3), t1 + t3 + Tif, p1::path(e1)::p3>
+      else if v1 then
+	 let <v2, t2, p2> = T[[e2]] in
+	    <v2, t1+t2+Tif,
