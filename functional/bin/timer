@@ -1,0 +1,53 @@
+#!/bin/tcsh -f
+
+if ($#argv < 3) goto usage
+onintr end
+
+if ($0 =~ /*) then
+   set ALPAdir = ${0:h}/..
+else
+   set ALPAdir = `pwd`/${0:h}/..
+endif
+
+set schemedir = $ALPAdir/scheme
+set funname =	${argv[1]:s/cost_//:s/.ss//}
+set argssize =	$argv[2]:q
+set sizes =	($argv[3-]:q)
+
+set tmp1 = /tmp/$0:t.$$.1
+set tmp2 = /tmp/$0:t.$$.2
+set tmp3 = /tmp/$0:t.$$.3
+set q = '"'
+
+# start timing this function
+echo "(start-timer $q$ALPAdir$q $q$funname$q $argssize $sizes) (exit)" > $tmp1
+scheme timer.ss $tmp1 | tee $tmp2
+tail +`sed /define/q $tmp2 | wc -l` $tmp2 > cost_$funname-sym.ss
+
+# now time the primitives
+./timer-prim
+
+# and predict the time for the function
+foreach host (prim.*.ss)
+  echo "timing in $host:r:e"
+  echo "(load $q$host$q) (load ${q}cost_$funname-sym.ss$q)" > $tmp1
+  foreach num ($sizes)
+    echo "(printf $q(symcost_$funname $num) ==> ~a~%$q" >> $tmp1
+    echo "   (symcost_$funname $num))" >> $tmp1
+    echo "" >> $tmp1
+  end
+  echo "(exit)" >> $tmp1
+  scheme $tmp1 | tail +4
+  echo ""
+end
+
+read
+
+end:
+  /bin/rm -f $tmp1 $tmp2 $tmp3
+  exit 0
+
+usage:
+  echo "usage:"
+  echo "  $0:t functionname num-args size0 [size1 ...]"
+  exit 1
