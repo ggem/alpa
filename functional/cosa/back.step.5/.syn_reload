@@ -1,0 +1,4 @@
+echo -n Reloading /nfs/whale/home/user2/ggomezes/clases/c790.pa/back.step.3/timebound ...
+cd /nfs/whale/home/user2/ggomezes/clases/c790.pa/back.step.3/sgen.files
+/nfs/whale/home/user2/ggomezes/clases/c790.pa/back.step.3/sgen.files/sgen_load -quiet
+echo ' done.'
