@@ -1,0 +1,37 @@
+INT foreign newInt();
+
+%{
+static count = 0;
+%}
+
+%[
+FOREIGN newInt()
+{	count++;
+	return(Int(count));
+}
+%]
+
+/*****************************************************************************
+ * $getNewName$ takes a string $s$, and an $idList$ l of used identifiers,
+ * generates a new string if $Ident(s)$ is in $idList$, returns $s$ o.w.
+ *****************************************************************************/
+STR getNewName(STR s, idList l) {
+  let ID = ((s=="") ? "v" : s )
+  in( !inIdList(Ident(ID),l) ? ID : tryNewName(ID, l) )
+  };
+
+STR tryNewName(STR ID, idList l) {
+  let newID = ID#INTtoSTR(newInt())
+  in( !inIdList(Ident(newID),l) ? newID : tryNewName(ID, l) )
+  };
+
+/*****************************************************************************
+ * return new function name for $funName$ under new parameter pattern $args$.
+ * The second argument is not used now.
+ *****************************************************************************/
+id getNewFunName (id funName, STR str, idList args) {
+  with (funName) (
+	IdNull: IdNull,
+	Ident(ID): Ident(ID#str#INTtoSTR(newInt()))
+	)
+  };
