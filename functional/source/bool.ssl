@@ -1,0 +1,87 @@
+/*****************************************************************************
+ * Abstract syntax for expression $exp$ with $BoolOp,Not,And,Equal$ etc.
+ *****************************************************************************/
+exp	:	exported BoolOp(BOOL)
+	|	Not(exp)
+	|	And, Or, Equal, NotEqual(exp exp)
+	;
+
+/*****************************************************************************
+ * Minimal parenthesization
+ *****************************************************************************/
+exp	:	Not	PP1(9)
+	|	And	PP2(3)
+	|	Or	PP2(2)
+	|	Equal, NotEqual PP2(4)
+	;
+
+/*****************************************************************************
+ * Attribution rules for expression $exp$ with $BoolOp,Not,And,Equal$ etc.
+ *****************************************************************************/
+exp	:	BoolOp{	exp.idCollect = IdList0(); }
+
+	|	Not   { exp$2.funEnv = exp$1.funEnv;
+			exp$2.conEnv = exp$1.conEnv;
+
+			exp$1.idCollect = exp$2.idCollect;
+			exp$2.idEnv = exp$1.idEnv; }
+
+	|	And, Or, Equal, NotEqual {
+			exp$2.funEnv = exp$1.funEnv;
+			exp$3.funEnv = exp$1.funEnv;
+			exp$2.conEnv = exp$1.conEnv;
+			exp$3.conEnv = exp$1.conEnv;
+
+			exp$1.idCollect = 
+			    unionIdList(exp$2.idCollect,exp$3.idCollect);
+			exp$2.idEnv = exp$1.idEnv;
+			exp$3.idEnv = exp$1.idEnv; }
+	;
+
+/*****************************************************************************
+ * Concrete input syntax for $exp$ with $BoolOp,Not,And,Equal$ etc.
+ *****************************************************************************/
+Exp	::=	(TRUE)		{ Exp.abs = BoolOp(true); }
+	|	(FALSE)		{ Exp.abs = BoolOp(false); }
+	|	('!' Exp)	{ Exp$1.abs = Not(Exp$2.abs); } 
+	|	(Exp '&' Exp)	{ Exp$1.abs = And(Exp$2.abs, Exp$3.abs); }
+	|	(Exp '|' Exp)	{ Exp$1.abs = Or(Exp$2.abs, Exp$3.abs); }
+	|	(Exp EQUAL Exp prec EQUAL)
+				{ Exp$1.abs = Equal(Exp$2.abs, Exp$3.abs); }
+	|	(Exp NOTEQUAL Exp prec NOTEQUAL)
+				{ Exp$1.abs = NotEqual(Exp$2.abs, Exp$3.abs); }
+	;
+
+/*****************************************************************************
+ * Unparsing for $exp$ with $BoolOp,Not,And,Equal$ etc.
+ *****************************************************************************/
+exp	:	BoolOp	[ ^ ::= ^ ]
+	|	Not	[ ^ ::= PT(lp) OP(!) @ PT(rp)]
+	|	And	[ ^ ::= PT(lp) @ OP2(&) @ PT(rp)]
+	|	Or	[ ^ ::= PT(lp) @ OP2(|) @ PT(rp)]
+	|	Equal	[ ^ ::= PT(lp) @ OP2(==) @ PT(rp)]
+	|	NotEqual[ ^ ::= PT(lp) @ OP2(!=) @ PT(rp)]
+	;
+
+/*****************************************************************************
+ * Template commands for expression $exp$ with $BoolOp,Not,And,Equal$ etc.
+ *****************************************************************************/
+transform exp
+	on "true" <exp> : BoolOp(true),
+	on "false" <exp> : BoolOp(false),
+	on "not" <exp> : Not(<exp>),
+	on "and" <exp> : And(<exp>, <exp>),
+	on "or" <exp> : Or(<exp>, <exp>),
+	on "equal" <exp> : Equal(<exp>, <exp>),
+	on "notEqual" <exp> : NotEqual(<exp>, <exp>),
+	on "commute" And(a, b) : And(b, a),
+	on "commute" Or(a, b) : Or(b, a),
+	on "commute" Equal(a, b) : Equal(b, a),
+	on "commute" NotEqual(a, b) : NotEqual(b, a),
+	on "associate" And(And(a,b),c): And(a,And(b,c)),
+	on "associate" And(a,And(b,c)): And(And(a,b),c),
+	on "associate" Or(Or(a,b),c): Or(a,Or(b,c)),
+	on "associate" Or(a,Or(b,c)): Or(Or(a,b),c),
+	on "distribute" And(Or(a,b),c): Or(And(a,c),And(b,c)),
+	on "distribute" And(c,Or(a,b)): Or(And(c,a),And(c,b))
+	;
