@@ -1,0 +1,138 @@
+/*****************************************************************************
+ * returns identifiers for free variables in $e(l)$, no repetition, any order.
+ *****************************************************************************/
+idList freeIdsInExp(exp e) {
+    with (e) (
+	VoidExp: IdList0,				/*should not happen */
+	VarId(ID): IdList2(Ident(ID),IdList0),
+
+	IntOp(INT): IdList0,
+	BoolOp(BOOL): IdList0,
+
+	Neg(e1): freeIdsInExp(e1),
+	Sum(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Diff(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Prod(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Quot(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Less(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	LessEqual(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Greater(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	GreaterEqual(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Not(e1): freeIdsInExp(e1),
+	And(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Or(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	Equal(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+	NotEqual(e1,e2): unionIdList(freeIdsInExp(e1),freeIdsInExp(e2)),
+
+	FunCall(i,ps): freeIdsInExpList(ps),
+
+	If(e1,e2,e3):
+	    unionIdList(freeIdsInExp(e1),
+			unionIdList(freeIdsInExp(e2),freeIdsInExp(e3))),
+
+	Let(i,e1,e2):
+	    unionIdList(freeIdsInExp(e1),
+			restIdList(IdList2(i,IdList0),freeIdsInExp(e2))),
+	x: IdList0,		/* INCORRECT.  TO CHANGE LATER */
+	)
+    };
+
+idList freeIdsInExpList(expList l) {
+    with (l) (
+	ExpList0: IdList0,
+	ExpList2(e,l1): unionIdList(freeIdsInExp(e),freeIdsInExpList(l1)),
+	)
+    };
+
+/*****************************************************************************
+ * get all identifiers in $exp(List)$, can repeat, in occuring order
+ *****************************************************************************/
+idList idsInExp(exp e) {
+    with (e) (
+	VoidExp: IdList0,
+	VarId(ID): IdList2(Ident(ID),IdList0),
+
+	IntOp(INT): IdList0,
+	BoolOp(BOOL): IdList0,
+
+	Neg(e1): idsInExp(e1),
+	Sum(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Diff(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Prod(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Quot(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Less(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	LessEqual(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Greater(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	GreaterEqual(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Not(e1): idsInExp(e1),
+	And(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Or(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	Equal(e1,e2): idsInExp(e1) @ idsInExp(e2),
+	NotEqual(e1,e2): idsInExp(e1) @ idsInExp(e2),
+
+	FunCall(i,ps): idsInExpList(ps),
+
+	If(e1,e2,e3): idsInExp(e1)@ (idsInExp(e2)@idsInExp(e3)),
+
+	Let(i,e1,e2): IdList2(i, idsInExp(e1) @ idsInExp(e2)),
+	x: IdList0,			/* INCORRECT.  TO CHANGE LATER */
+	)
+    };
+
+idList idsInExpList(expList l) {
+    with (l) (
+	ExpList0: IdList0,
+	ExpList2(e,l1): idsInExp(e) @ idsInExpList(l1),
+	)
+    };
+
+/*****************************************************************************
+ * get all identifiers in $exp(List)$, no multi occurrences, in occuring order
+ *****************************************************************************/
+idList uniqueIdsInExp(exp e) {
+    toIdSet(idsInExp(e))
+    };
+
+idList uniqueIdsInExpList(expList l) {
+    toIdSet(idsInExpList(l))
+    };
+
+/*****************************************************************************
+ * auxiliary functions on $idList:
+ * $unionIdList(l1,l2)$ appends $l2$ on $l1$, removing from $l2$ elem in $l1$.
+ * $restIdList(l1,l2)$ returns the list of elems in $l2$ that are not in $l1$.
+ * $inIdList(el)$ test if element $e$ is in the list $l$.
+ * $toIdSet(l)$ returns list of elems in $l$, but each elem occur only once.
+ *****************************************************************************/
+idList unionIdList(idList l1, idList l2) {
+    l1 @ restIdList(l1,l2)
+    };
+
+idList restIdList(idList l1, idList l2) {
+    with (l2) (
+	IdList0: IdList0,
+	IdList2(i,l21): 
+	    ( inIdList(i,l1) ) 
+	      ? restIdList(l1,l21) 
+	      : IdList2(i, restIdList(l1,l21)),
+	)
+    };
+
+BOOL inIdList(id i, idList l) {
+    with (l) (
+	IdList0: false,
+	IdList2(i1,l1): (i==i1) ? true : inIdList(i,l1)
+	)
+    };
+
+idList toIdSet(idList l) {
+    with (l) (
+	IdList0: IdList0,
+	IdList2(i,l1): IdList2(i, toIdSet(restIdList(IdList2(i,IdList0),l1)))
+	)
+    };
+
+idList addInIdSet(id i, idList l) {
+    inIdList(i,l) ? l : i::l
+    };
+
