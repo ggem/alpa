@@ -1,0 +1,285 @@
+/*****************************************************************************
+ * initial $conEnv$
+ * cons : (cons?) car,cdr;		list
+ * fork : (fork?) fork1,fork2;		binary tree
+ * N : (N?) N1,N2,N3,N4;		tree node in AGeval
+ * A : (A?) A1,A2,A3,A4,A5,A6,A7; 	attribute node in AGeval
+ * P : (P?) P1,P2;			pair 
+ *****************************************************************************/
+conDesSet initConDesSet() {
+/*    ConDesSetPair(ConDestructors(Ident("nil"), Ident("null"), Destructor0
+				)
+*/    ConDesSetPair(ConDestructors(Ident("cons"), Ident("cons?"),
+		  		 Destructor2(Ident("car"), 
+				 Destructor2(Ident("cdr"), Destructor0))
+				),
+    ConDesSetPair(ConDestructors(Ident("pair"), Ident("pair?"),
+		  		 Destructor2(Ident("fst"), 
+				 Destructor2(Ident("snd"), Destructor0))
+				),
+    ConDesSetPair(ConDestructors(Ident("fork"), Ident("fork?"),
+		  		 Destructor2(Ident("fork1"), 
+				 Destructor2(Ident("fork2"), Destructor0))
+				),
+    ConDesSetPair(ConDestructors(Ident("N"), Ident("N?"),
+				 Destructor2(Ident("N1"),
+				 Destructor2(Ident("N2"),
+				 Destructor2(Ident("N3"),
+				 Destructor2(Ident("N4"), Destructor0))))
+				),
+    ConDesSetPair(ConDestructors(Ident("A"), Ident("A?"),
+				 Destructor2(Ident("A1"),
+				 Destructor2(Ident("A2"),
+				 Destructor2(Ident("A3"),
+				 Destructor2(Ident("A4"),
+				 Destructor2(Ident("A5"),
+				 Destructor2(Ident("A6"),
+				 Destructor2(Ident("A7"), 
+				 Destructor0)))))))
+				),
+    ConDesSetPair(ConDestructors(Ident("P"), Ident("P?"),
+		  		 Destructor2(Ident("P1"), 
+				 Destructor2(Ident("P2"), Destructor0))
+				),
+    ConDesSetPair(ConDestructors(Ident("p1"), Ident("p1?"),
+				 Destructor2(Ident("p1_TL"), 
+				 Destructor2(Ident("p1_v"), Destructor0))
+				),
+    ConDesSetPair(ConDestructors(Ident("p2"), Ident("p2?"),
+		  		 Destructor2(Ident("p2_TB"), 
+				 Destructor2(Ident("p2_p"),
+				 Destructor2(Ident("p2_v"), Destructor0)))
+				),
+    ConDesSetPair(ConDestructors(Ident("p3"), Ident("p3?"),
+				 Destructor2(Ident("p3_TB"), 
+				 Destructor2(Ident("p3_TL"),
+				 Destructor2(Ident("p3_p"),
+				 Destructor2(Ident("p3_v"), 
+				 Destructor0))))
+				),
+    ConDesSetPair(ConDestructors(Ident("p4"), Ident("p4?"),
+				 Destructor2(Ident("p4_0"), 
+				 Destructor2(Ident("p4_p"),
+				 Destructor2(Ident("p4_v"), Destructor0)))
+				),
+    ConDesSetPair(ConDestructors(Ident("p5"), Ident("p5?"),
+		  		 Destructor2(Ident("p5_1"), 
+				 Destructor2(Ident("p5_p"),
+				 Destructor2(Ident("p5_v"), Destructor0)))
+				),
+    ConDesSetIsEmpty)))))))))))
+    };
+
+/*****************************************************************************
+ * auxiliary functions on $conDesSet$:
+ * $unionConDesSet(s1,s2)$ appends $s2$ on $s1$, removes from $s2$ elem in $s1$
+ $ $restConDesSet(s1,s2)$ returns list of elems in $s2$ that are not in $s1$
+ * $inConDesSet(cd,s)$ check if conDestructor $cd$ is in the conDes set $s$.
+ *****************************************************************************/
+conDesSet unionConDesSet(conDesSet s1, conDesSet s2) {
+    s1 @ restConDesSet(s1,s2)
+    };
+
+BOOL inConDesSet ( conDes d, conDesSet s) {
+    with (s) (
+	ConDesSetIsEmpty: false,
+	ConDesSetPair(d1,s1): d1==d ? true : inConDesSet(d,s1)
+	)
+    };
+
+conDesSet restConDesSet(conDesSet s1, conDesSet s2) {
+    with (s2) (
+	ConDesSetIsEmpty: ConDesSetIsEmpty,
+	ConDesSetPair(d,s21): 
+	    ( inConDesSet(d,s1) )
+	      ? restConDesSet(s1,s21)
+	      : ConDesSetPair(d, restConDesSet(s1,s21)),
+	)
+    };
+
+/*****************************************************************************
+ * $isCon$ checks if $c$ is a construtor in $conEnv$ $s$.
+ * $desForCon$ returns set of destructors if $c$ is, $Destructor0$ otherwise.
+ * $isConDe$ checks if $c(l)$ is a construction of corresp destructed parts.
+ * $conDe$ returns $e$ if $l=(d1(e),d2(e),...dn(e))$, $FunCall(c,l)$ otherwise.
+ *****************************************************************************/
+BOOL isCon(id c, conDesSet s) {
+    with (s) (
+	ConDesSetIsEmpty: false,
+	ConDesSetPair(ConDestructors(c1,t,ds),s1): c1==c ? true : isCon(c,s1)
+	)
+    };
+
+des desForCon(id c, conDesSet s) {
+    with (s) (
+	ConDesSetIsEmpty: Destructor0,
+	ConDesSetPair(ConDestructors(c1,t,ds),s1): c1==c ? ds : desForCon(c,s1)
+	)
+    };
+
+BOOL isConDe(id c, expList l, conDesSet s) {
+    !isCon(c,s) ? false :
+    with (l) (
+	ExpList0: false,
+	ExpList2(FunCall(*,ExpList2(e,ExpList0)), *):
+	    let ds=desForCon(c,s) in( getConDesExp(ds,l,e)!=VoidExp ),
+	*: false
+	)
+    };
+
+exp conDe(id c, expList l, conDesSet s) {
+    let ds=desForCon(c,s)
+    in( with (l) (
+	    ExpList0: FunCall(c,l),  /* should not happen if ds!=Destructor0 */
+	    ExpList2(FunCall(*,ExpList2(e,ExpList0)), *):
+		let e1=getConDesExp(ds,l,e) in (e1==VoidExp? FunCall(c,l) :e1),
+	    *: FunCall(c,l)
+	    ) )
+    };
+
+exp getConDesExp(des ds, expList l, exp e) {
+    with (ds) (
+	Destructor0: 
+	    with (l) (
+		ExpList0: e,
+		*: VoidExp 				/* an arity error */
+		),
+	Destructor2(d, ds1): 
+	    with (l) (
+		ExpList0: VoidExp,			/* an arity error */
+		ExpList2(FunCall(d1,ExpList2(e1,ExpList0)), l1): 
+		    (d1==d && e1==e) ? getConDesExp(ds1,l1,e) : VoidExp,
+		*: VoidExp
+		)
+	)
+    };
+
+/*****************************************************************************
+ * $isDe$ checks if $d$ is a destructor.
+ * $isDeCon$ checks if $d(l)$ is a destruction of a constructor application.
+ * $deCon$ returns $e_i$ if $d=d_i$ and $l=c(e_1..e_i..e_n)$, $d(l)$ otherwise.
+ *****************************************************************************/
+BOOL isDe(id d, conDesSet cds) {
+    with (cds) (
+	ConDesSetIsEmpty: false,
+	ConDesSetPair(ConDestructors(c,t,ds),cds1):
+	    inDesSet(d,ds) ? true : isDe(d,cds1)
+	)
+    };
+
+BOOL inDesSet(id d, des ds) {
+    with (ds) (
+	Destructor0: false,
+	Destructor2(d1,ds1): d1==d ? true : inDesSet(d,ds1)
+	)
+    };
+
+BOOL isDeCon(id d, expList l, conDesSet cds) {
+    !isDe(d,cds) ? false :
+    with (l) (
+	ExpList0: false,
+	ExpList2(FunCall(c,*),ExpList0): 
+	    let ds=desForCon(c,cds) in( ds!=Destructor0 && inDesSet(d,ds) ),
+	*: false
+	)
+    };
+
+exp deCon(id d, expList l, conDesSet cds) {
+    with (l) (
+	ExpList0: FunCall(d,l),
+	ExpList2(FunCall(c,l1),ExpList0):
+	    let ds=desForCon(c,cds)
+	    in( ds!=Destructor0 ? getDeConExp(d,ds,l1)
+		: FunCall(d,l) ),			/* should not happen */
+	*: FunCall(d,l)
+	)
+    };
+
+exp getDeConExp(id d, des ds, expList l) {
+    with (ds) (
+	Destructor0: VoidExp,				/* should not happen */
+	Destructor2(d1,ds1):
+	    with (l) (
+		ExpList0: VoidExp,			/* should not happen */
+		ExpList2(e,l1): d1==d ? e : getDeConExp(d,ds1,l1)
+		)
+	)
+    };
+
+/*****************************************************************************
+ * recursively simplify all the destructor of constructor expression
+ *****************************************************************************/
+exp deConAll(exp e, conDesSet s) {
+    with (e) (
+	VoidExp: e,
+	VarId(ID): e,
+
+	IntOp(INT): e,
+	BoolOp(BOOL): e,
+
+	Neg(e1): Neg(deConAll(e1,s)),
+	Sum(e1,e2): Sum(deConAll(e1,s), deConAll(e2,s)),
+	Diff(e1,e2): Diff(deConAll(e1,s), deConAll(e2,s)),
+	Prod(e1,e2): Prod(deConAll(e1,s), deConAll(e2,s)),
+	Quot(e1,e2): Quot(deConAll(e1,s), deConAll(e2,s)),
+	Less(e1,e2): Less(deConAll(e1,s), deConAll(e2,s)),
+	LessEqual(e1,e2): LessEqual(deConAll(e1,s),deConAll(e2,s)),
+	Greater(e1,e2): Greater(deConAll(e1,s), deConAll(e2,s)),
+	GreaterEqual(e1,e2): GreaterEqual(deConAll(e1,s), deConAll(e2,s)),
+	Not(e1): Not(deConAll(e1,s)),
+	And(e1,e2): And(deConAll(e1,s), deConAll(e2,s)),
+	Or(e1,e2): Or(deConAll(e1,s), deConAll(e2,s)),
+	Equal(e1,e2): Equal(deConAll(e1,s), deConAll(e2,s)),
+	NotEqual(e1,e2): NotEqual(deConAll(e1,s), deConAll(e2,s)),
+
+	FunCall(IdNull, ps): e,
+	FunCall(i,l): let l1=deConListAll(l,s)
+		      in( isDeCon(i,l1,s) ? deCon(i,l1,s) : FunCall(i,l1) ),
+
+	If(e1,e2,e3): If(deConAll(e1,s), deConAll(e2,s), deConAll(e3,s)),
+
+	Let(i,e1,e2): Let(i, deConAll(e1,s), deConAll(e2,s)),
+	x: x,			/* INCORRECT,  TO CHANGE LATER */
+	)
+    };
+
+expList deConListAll ( expList l, conDesSet s ) {
+    with (l) (
+	ExpList0: ExpList0,
+	ExpList2(e,l1): ExpList2(deConAll(e,s), deConListAll(l1,s))
+	)
+    };
+
+/*****************************************************************************
+ * $isConTest$ checks whether $t$ is a constructor test
+ * $conTest$ returns true iff $l=c(l1)$ and $c$ is the contructor $t$ tests.
+ *****************************************************************************/
+BOOL isConTest(id t, conDesSet s) {
+    t==Ident("null") ? true
+    : with (s) (
+	ConDesSetIsEmpty: false,
+	ConDesSetPair(ConDestructors(c1,t1,ds),s1): t1==t? true:isConTest(t,s1)
+	)
+  };
+
+exp conTest(id t, expList l, conDesSet cds) {
+    t==Ident("null") 
+    ? with (l) (
+	ExpList2(VarId("nil"),ExpList0): BoolOp(true),
+	ExpList2(FunCall(Ident("cons"),ExpList2(e1,ExpList2(e2,ExpList0))),
+			 ExpList0): BoolOp(false),
+	*: FunCall(t,l)
+	)
+    : with (l) (
+	ExpList2(FunCall(c,l1),ExpList0): 
+	    isCon(c,cds) ? conTest_Aux(t,c,cds) : FunCall(t,l),
+	*: FunCall(t,l)
+	)
+  };
+exp conTest_Aux(id t, id c, conDesSet cds) {
+    with (cds) (
+	ConDesSetIsEmpty: BoolOp(false),
+	ConDesSetPair(ConDestructors(c1,t1,ds),cds1):
+	    t1==t && c1==c ? BoolOp(true) : conTest_Aux(t,c,cds1)
+	)
+  };
