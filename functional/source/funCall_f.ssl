@@ -1,0 +1,52 @@
+/*****************************************************************************
+ * $applyIf$ pulls all IF exps out of all function or constructor appls.
+ * $applyIf_Aux$ considers an application $f(doneL @ unDoneL)$, and
+ *  pulls out the IF of the first expression in $unDoneL$ if it is an IF exp.
+ *****************************************************************************/
+exp applyIf (exp e) {
+    with (e) (
+	VoidExp: e,					/* should not happen */
+	VarId(ID): e,
+
+	IntOp(INT): e,
+	BoolOp(BOOL): e,
+
+	Neg(e1): Neg(applyIf(e1)),
+	Sum(e1,e2): Sum(applyIf(e1), applyIf(e2)),
+	Diff(e1,e2): Diff(applyIf(e1), applyIf(e2)),
+	Prod(e1,e2): Prod(applyIf(e1), applyIf(e2)),
+	Quot(e1,e2): Quot(applyIf(e1), applyIf(e2)),
+	Less(e1,e2): Less(applyIf(e1), applyIf(e2)),
+	LessEqual(e1,e2): LessEqual(applyIf(e1), applyIf(e2)),
+	Greater(e1,e2): Greater(applyIf(e1), applyIf(e2)),
+	GreaterEqual(e1,e2): GreaterEqual(applyIf(e1), applyIf(e2)),
+	Not(e1): Not(applyIf(e1)),
+	And(e1,e2): And(applyIf(e1), applyIf(e2)),
+	Or(e1,e2): Or(applyIf(e1), applyIf(e2)),
+	Equal(e1,e2): Equal(applyIf(e1), applyIf(e2)),
+	NotEqual(e1,e2): NotEqual(applyIf(e1), applyIf(e2)),
+
+	FunCall(f,ps): applyIf_Aux(f, ExpList0, ps),
+
+	If(e1,e2,e3): If(applyIf(e1),applyIf(e2),applyIf(e3)),
+
+	Let(i,e1,e2): Let(i, applyIf(e1), applyIf(e2)),
+	x: x,			/* INCORRECT,  TO CHANGE LATER */
+	)
+    };
+
+exp applyIf_Aux (id f, expList doneL, expList unDoneL) {
+    with (unDoneL) (
+	ExpList0: FunCall(f,doneL),
+	ExpList2(e,unDoneL1):
+	    let doneE = applyIf(e)
+	    in( with (doneE) (
+		    If(e1,e2,e3): 
+			let doneL2 = doneL@ExpList2(applyIf(e2),ExpList0);
+			    doneL3 = doneL@ExpList2(applyIf(e3),ExpList0)
+			in( If(e1,applyIf(applyIf_Aux(f,doneL2,unDoneL1)),
+				  applyIf(applyIf_Aux(f,doneL3,unDoneL1))) ),
+		    *: applyIf_Aux(f, doneL@ExpList2(e,ExpList0), unDoneL1)
+		    ) )
+	)
+    };
