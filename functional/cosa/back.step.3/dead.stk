@@ -1,0 +1,400 @@
+;;;
+;;; dead.stk
+;;; hilites dead code.
+;;;
+;;; csci b609 Spring/1997
+
+
+(load "record-case.stk")	;; Chez Scheme record-case emulator
+(load "util.stk")		;; writeln and such utilities
+
+;;;
+;;; main entry functions.  called from ssl.
+;;;
+
+(define scheme_hilite
+  (lambda (p)
+    (let ((p (sg:explode* p)))
+      (string->symbol*! p)
+      (unhilite! p)
+      (mark-dead-code! p (live-args p))
+      (symbol->string*! p)
+      (make-immortal (sg:implode* p)))))
+
+
+(define scheme_unhilite
+  (lambda (p)
+    (let ((p (sg:explode* p)))
+      (string->symbol*! p)
+      (unhilite! p)
+      (symbol->string*! p)
+      (make-immortal (sg:implode* p)))))
+
+(define scheme_eliminate
+  (lambda (p)
+    (let ((p (sg:explode* p)))
+      (string->symbol*! p)
+      (unhilite! p)
+      (mark-dead-code! p (live-args p))
+      (eliminate-code! p)
+      (symbol->string*! p)
+      (make-immortal (sg:implode* p)))))
+
+
+(define unhilite!
+  (lambda (term)
+    (if (pair? term)
+      (if (or (eq? (car term) '|HiliteExp|) (eq? (car term) '|HiliteId|))
+	(begin
+	  (copy-list! term (cadr term))
+	  (unhilite! term))
+	(for-each unhilite! term)))))
+
+;;;
+;;;  live arguments
+;;;
+
+(define live-args
+  (lambda (exp)
+    (record-case exp
+      (|Prog| (fundefs cdset exp1)
+	 (letrec ((loop (lambda (env max)
+			  (let ((new-env (live-args-fdefs fundefs env)))
+			    (if (or (equal? env new-env) (= max 0))
+			      new-env
+			      (loop new-env (- max 1)))))))
+	   (loop (fdefs->env fundefs) 10)))
+      (else
+	(writeln (car exp) "not recognized in live-args")))))
+
+(define live-args-fdefs
+  (lambda (fdefs env)
+    (record-case fdefs
+      (|FunDefs2| (fundef fundefs)
+	 (live-args-fdefs fundefs
+	   (live-args-fdefs fundef env)))
+      (|FunDefinition| (ident idList exp)
+	 (let ((id (ident->id ident)))
+	   (let ((new ((live-args-exp 'S (cdr (fdef->env fdefs 'A)) env) exp)))
+	     (map (lambda (ctxt) (if (eq? id (car ctxt)) (cons id new) ctxt))
+	       env))))
+      (|FunDefs0| ()
+	 env)
+      (|VoidFunDef| ()
+	 env)
+      (else
+	(writeln (car fdefs) "not recognized in live-args-fdefs")))))
+
+(define live-args-exp
+  (lambda (context null-ctx fun-ctxts)
+    (letrec
+      ((live-args
+	 (lambda (exp)
+	   (record-case exp
+	     (|VoidExp| ();; everything is absent if we have no expression
+		null-ctx)
+	     (|VarId| (id);; everything but the variable is absent
+		(subst-ctxt id context null-ctx))
+	     (|FunCall| (ident expList)
+		(let ((fun-ctxt? (assq (ident->id ident) fun-ctxts)))
+		  (if fun-ctxt?;; is the function defined?
+		    (let ((exps (explist->list explist))
+			  (fun-ctxt (cdr fun-ctxt?)))
+		      (if (= (length fun-ctxt) (length exps));; arity ok?
+			(let ((contexts (map live-args exps)))
+			  (do ((contexts contexts (cdr contexts))
+			       (fun-ctxt fun-ctxt (cdr fun-ctxt))
+			       (context  null-ctx
+				 (map apply-& context
+				   (map (apply-f (car fun-ctxt))
+				     (car contexts)))))
+			    ((null? contexts) context)))
+			null-ctx));; if not okay, then everything is absent
+		    null-ctx)));; if function not defined, everything absent
+	     (|If| (exp1 exp2 exp3)
+		(let ((ctx-test (live-args exp1))
+		      (ctx-then (live-args exp2))
+		      (ctx-else (live-args exp3)))
+		  (map apply-& ctx-test
+		    (map apply-lub ctx-then ctx-else))))
+	     (|Let| (ident exp1 exp2)
+		(let* ((id (ident->id ident))
+		       (null (cons (cons id 'A) null-ctx));; new null context
+		       (ctxt1 (live-args exp1))
+		       (ctxt2 ((live-args-exp context null fun-ctxts) exp2))
+		       (idctx (car ctxt2))		;;; was id used?
+		       (ctxt2 (cdr ctxt2)))		;;; ctxt for the body
+		  (map apply-& ctxt2 (map (apply-f idctx) ctxt1))))
+	     ((|And| |Or| |Equal| |NotEqual| |Sum| |Diff| |Prod| |Quot|
+		    |Less| |LessEqual| |Greater| |GreaterEqual|)    (exp1 exp2)
+		     (map apply-& (live-args exp1) (live-args exp2)))
+	     ((|Not| |Neg|) (exp1)
+	      (live-args exp1))
+	     ((|BoolOp| |IntOp|) (constant)
+	      null-ctx)
+	     (else
+	       (writeln (car exp) "not recognized in live-args-exp"))))))
+      live-args)))
+
+
+
+;;;
+;;; mark dead code
+;;;
+
+(define mark-dead-code!
+  (lambda (prog env)
+    (record-case prog
+      (|Prog| (fundefs cdset exp1)
+	 (mark-dead-code-fdefs! fundefs env)
+	 ((mark-dead-code-exp! env '()) exp1))
+      (else
+	(writeln (car prog) "not recognized in mark-dead-code!")))))
+
+(define mark-dead-code-fdefs!
+  (lambda (fdefs env)
+    (record-case fdefs
+      (|FunDefs2| (fundef fundefs)
+	 (mark-dead-code-fdefs! fundefs env)
+	 (mark-dead-code-fdefs! fundef  env))
+      (|FunDefinition| (ident idList exp)
+	 (let* ((id (ident->id ident))
+		(ctxt (cdr (assq id env))))
+	   (mark-dead-args! idList (map cdr (cdr (assq id env))))
+	   ((mark-dead-code-exp! env ctxt) exp)))
+      (|FunDefs0| () #f)
+      (|VoidFunDef| () #f)
+      (else
+	(writeln (car fdefs) "not recognized in live-args-fdefs")))))
+
+(define mark-dead-code-exp!
+  (lambda (env ctxt)
+    (letrec
+      ((mark-dead-code!
+	 (lambda (exp)
+	   (record-case exp
+	     (|VoidExp| () 'constant)
+	     (|VarId| (id) 
+		(let ((idctxt (assq id ctxt)))
+		  (if (and idctxt (not (eq? (cdr idctxt) 'A)));; not absent?
+		    'alive
+		    (mark-dead-code-dead! exp))))
+	     (|FunCall| (ident expList)
+		(let ((fun-ctxt? (assq (ident->id ident) env)))
+		  (if fun-ctxt?;; is the function defined?
+		    (let ((exps (explist->list explist))
+			  (ctxt (cdr fun-ctxt?)))
+		      (if (= (length ctxt) (length exps));; arity ok?
+			(let ((r (merge-subexprs (map mark-dead-code! exps))))
+			  (do ((exps exps (cdr exps))
+			       (ctxt ctxt (cdr ctxt)))
+			    ((null? exps) 'alive)
+			    (if (eq? (cdar ctxt) 'A);;absent?
+			      (mark-dead-code-dead! (car exps))))
+			  (if (dead? r)
+			    (mark-dead-code-dead! exp))
+			  r)
+			(mark-dead-code-dead! exp)))
+		    (mark-dead-code-dead! exp))))
+	     (|Let| (ident exp1 exp2)
+		(let* ((stat1 (mark-dead-code! exp1))
+		       (id (ident->id ident))
+		       (ctxt (cons (cons id (if (dead? stat1) 'A 'S)) ctxt))
+		       (stat2 ((mark-dead-code-exp! env ctxt) exp2)))
+		  (if (dead? exp2)
+		    (mark-dead-code-dead! exp)
+		    (merge-subexprs (list stat1 stat2)))))
+	     ((|If| |And| |Or| |Equal| |NotEqual| |Sum| |Diff| |Prod| |Quot|
+	       |Less| |LessEqual| |Greater| |GreaterEqual| |Not| |Neg|) exps
+	      (let ((result (merge-subexprs (map mark-dead-code! exps))))
+		(if (dead? result)
+		  (mark-dead-code-dead! exp)
+		  result)))
+	     ((|BoolOp| |IntOp|) (constant) 'constant)
+	     (else
+	       (writeln (car exp) "not recognized in live-args-exp"))))))
+      mark-dead-code!)))
+
+(define mark-dead-args!
+  (lambda (idlist env)
+    (record-case idlist
+      (|IdList0| () #f)
+      (|IdList2| (ident idlist1)
+	 (if (eq? 'A (car env))
+	   (mark-dead-code-dead! ident '|HiliteId|))
+	 (mark-dead-args! idlist1 (cdr env)))
+      (else (writeln (car idlist) "not recognized in idlist->list")))))
+
+;;; mark-dead-code-dead! actually does the marking.
+(define mark-dead-code-dead!
+  (lambda (exp . symbol)
+    (let ((new-exp (cons (car exp) (cdr exp)))
+	  (mark (if (null? symbol) '|HiliteExp| (car symbol))))
+      (set-car! exp mark)
+      (set-cdr! exp (list new-exp))
+      'dead)))
+
+;;; merge-subexprs merges the result of the subexpressions into one
+(define merge-subexprs
+  (letrec ((merge-subexprs-dead
+	     (lambda (lst)
+	       (cond
+		 ((null? lst)		    'dead)
+		 ((eq? (car lst) 'alive)    'alive)
+		 (else (merge-subexprs-dead (cdr lst)))))))
+    (lambda (lst)
+      (cond
+	((null? lst)	           'constant)
+	((eq? (car lst) 'alive)    'alive)
+	((eq? (car lst) 'constant) (merge-subexprs (cdr lst)))
+	(else (merge-subexprs-dead (cdr lst)))))))
+
+
+(define dead?
+  (lambda (symbol)
+    (eq? symbol 'dead)))
+
+
+
+;;;
+;;; eliminate dead code
+;;;
+
+(define eliminate-code!
+  (lambda (exp)
+    (record-case exp
+      (|Prog| (fundefs cdset exp1)
+	 (eliminate-code! fundefs)
+	 (eliminate-code! exp1))
+      (|FunDefs2| (fundef fundefs)
+	 (eliminate-code! fundefs)
+	 (if (marked-dead? fundef)
+	   (copy-list! exp fundefs)
+	   (eliminate-code! fundef)))
+      (|FunDefinition| (ident idList exp)
+	 (eliminate-code! idList)
+	 (eliminate-code! exp))
+      (|IdList2| (ident idlist1)
+	 (eliminate-code! idlist1)
+	 (if (marked-dead? ident)
+	   (copy-list! exp idlist1)))
+      (|HiliteExp| (exp1) (set-car! (cdr exp) (list '|VoidExp|)))
+      (|ExpList2| (exp1 explist)
+	 (eliminate-code! explist)
+	 (if (marked-dead? exp1)
+	   (copy-list! exp explist)
+	   (eliminate-code! exp1)))
+      (|FunCall| (ident expList)
+	 (eliminate-code! expList))
+      (|Let| (ident exp1 exp2)
+	 (if (marked-dead? exp1)
+	   (copy-list! exp exp2)
+	   (eliminate-code! exp1))
+	 (eliminate-code! exp2))
+      ((|If| |And| |Or| |Equal| |NotEqual| |Sum| |Diff| |Prod| |Quot|
+        |Less| |LessEqual| |Greater| |GreaterEqual| |Not| |Neg|) exps
+       (for-each eliminate-code! exps))
+      ((|FunDefs0| |VoidFunDef| |IdList0| |BoolOp| |IntOp|) ignored #f)
+      ((|VarId| |VoidExp| |ExpList0|) ignored #f)
+      (else
+	(writeln (car exp) "not recognized in live-args-exp")))))
+
+(define marked-dead?
+  (lambda (exp)
+    (if  (pair? exp)
+      (cond
+	((eq? (car exp) '|HiliteExp|) #t)
+	((eq? (car exp) '|HiliteId|)  #t)
+	(else #f))
+      #f)))
+
+
+
+;;;
+;;; context functions  (_ is bottom)
+;;;
+
+(define apply-f				
+  (lambda (ctxt1)					;;;     L S A _
+    (lambda (ctxt2)					;;;  L  L L A _
+      (let ((ctxt1 (cons (car ctxt2) (cdr ctxt1))))	;;;  S  L S A _
+	(case (cdr ctxt1)				;;;  A  A A A _
+	  ((L) (if (eq? (cdr ctxt2) 'S) ctxt1 ctxt2))	;;;  _  _ _ _ _
+	  ((A) (if (eq? (cdr ctxt2) '_) ctxt2 ctxt1))	
+	  ((S) ctxt2)
+	  (else ctxt1))))))
+
+(define apply-&						
+  (lambda (ctxt1 ctxt2)					;;;     L S A _
+    (case (cdr ctxt1)					;;;  L  L S L L
+      ((L) (if (eq? (cdr ctxt2) 'S) ctxt2 ctxt1))	;;;  S  S S S S
+      ((A) (if (eq? (cdr ctxt2) '_) ctxt1 ctxt2))	;;;  A  L S A A
+      ((S) ctxt1)					;;;  _  L S A _
+      (else ctxt2))))
+
+(define apply-lub
+  (lambda (ctxt1 ctxt2)					;;;     L S A _
+    (case (cdr ctxt1)					;;;  L  L L L L
+      ((A) (cond					;;;  S  L S L S
+	     ((eq? (cdr ctxt2) 'S) (cons(car ctxt1)'L))	;;;  A  L L A A
+	     ((eq? (cdr ctxt2) 'L) ctxt2)		;;;  _  L S A _
+	     (else ctxt1)))
+      ((S) (cond
+	     ((eq? (cdr ctxt2) 'A) (cons (car ctxt1) 'L))
+	     ((eq? (cdr ctxt2) 'L) ctxt2)
+	     (else ctxt1)))
+      ((L) ctxt1)
+      (else ctxt2))))
+
+
+;;; subst-ctxt
+(define subst-ctxt
+  (lambda (id ctxt bindings)
+    (cond
+      ((null? bindings) '())
+      ((eq? id (caar bindings)) (cons (cons id ctxt) (cdr bindings)))
+      (else (cons (car bindings) (subst-ctxt id ctxt (cdr bindings)))))))
+
+;;;
+;;; converters
+;;;
+
+(define idlist->list
+  (lambda (idlist)
+    (record-case idlist
+      (|IdList0| () '())
+      (|IdList2| (ident idlist1)
+	 (cons (ident->id ident) (idlist->list idlist1)))
+      (else (writeln (car idlist) "not recognized in idlist->list")))))
+
+(define explist->list
+  (lambda (explist)
+    (record-case explist
+      (|ExpList0| () '())
+      (|ExpList2| (exp explist1)
+	 (cons exp (explist->list explist1)))
+      (else (writeln (car explist) "not recognized in explist->list")))))
+
+(define ident->id
+  (lambda (ident)
+    (record-case ident
+      (|IdNull| () (gensym))
+      (|Ident| (id) id )
+      (else (writeln (car ident) "not recognized in ident->id")))))
+
+(define fdefs->env
+  (lambda (fdefs)
+    (record-case fdefs
+      (|FunDefs0| () '())
+      (|FunDefs2| (fdef fdefs)
+	 (cons (fdef->env fdef '_) (fdefs->env fdefs)))
+      (else (writeln (car fdefs) "not recognized in fdefs->contexts")))))
+
+(define fdef->env
+  (lambda (fdef ctxt)
+    (record-case fdef
+      (|VoidFunDef| () '())
+      (|FunDefinition| (ident idlist exp)
+	 (cons (ident->id ident)
+	   (map (lambda (x) (cons x ctxt)) (idlist->list idlist))))
+      (else (writeln (car fdef) "not recognized in fdef->context")))))
