@@ -1,0 +1,111 @@
+/**
+ *    Time Bound transformation
+ **/
+
+program timebound(program p) {
+  with (p) (
+    Prog(fundefs, condesset, e):
+      Prog(timebound_fundefs(fundefs), condesset, e)
+    )
+  };
+
+funDefs timebound_fundefs(funDefs fl) {
+  with (fl) (
+    FunDefs0() : fl,
+    FunDefs2(tf,FunDefs2(f,fl)): 
+      FunDefs2(timebound_tau_fundef(tf),
+	       FunDefs2(timebound_sigma_fundef(f),
+			timebound_fundefs(fl))),
+    FunDefs2(f,l): fl
+    )
+  };
+
+funDef timebound_tau_fundef(funDef f) {
+  with (f) (
+    VoidFunDef(): f,
+    FunDefinition(name, args, body):
+      FunDefinition(name, args, timebound_tau_exp(body))
+    )
+  };
+
+funDef timebound_sigma_fundef(funDef f) {
+  with (f) (
+    VoidFunDef(): f,
+    FunDefinition(name, args, body):
+      FunDefinition(name, args, timebound_sigma_exp(body))
+    )
+  };
+
+expList timebound_tau_exps(expList l) {
+  with (l) (
+    ExpList0(): l,
+    ExpList2(x,l2): ExpList2(timebound_tau_exp(x),timebound_tau_exps(l2)),
+    )
+  };
+
+expList timebound_sigma_exps(expList l) {
+  with (l) (
+    ExpList0(): l,
+    ExpList2(x,l2): ExpList2(timebound_sigma_exp(x),timebound_sigma_exps(l2)),
+    )
+  };
+
+#define TB_EXPSOP(op,time) \
+  op(x2,x3): Sum(VarId(time),Sum(timebound_exp(x2),timebound_exp(x3)))
+
+exp timebound_tau_exp(exp x) {
+  with (x) (
+    Sum(x2,x3): Sum(timebound_tau_exp(x2),timebound_tau_exp(x3)),
+    FunCall(name, args): FunCall(name, timebound_tau_exps(args)),
+    If(x2,x3,x4): 
+      If(ListEq(timebound_sigma_exp(x2),VarId("ALL")),
+	 FunCall(Ident("max"),timebound_tau_exp(x3) ::
+		 timebound_tau_exp(x4) :: ExpList0),
+	 If(timebound_sigma_exp(x2),
+	    timebound_tau_exp(x3),
+	    timebound_tau_exp(x4))),
+    y: x,    
+    )
+  };
+
+
+#define TB_ONEARG(op) op(x2): op(timebound_sigma_exp(x2))
+#define TB_TWOARG(op) op(x2,x3): op(timebound_sigma_exp(x2),timebound_sigma_exp(x3))
+
+exp timebound_sigma_exp(exp x) {
+  with (x) (
+    TB_ONEARG(Not),
+    TB_ONEARG(Neg),
+    TB_ONEARG(ListNull),
+    TB_TWOARG(Sum),
+    TB_TWOARG(Diff),
+    TB_TWOARG(Quot),
+    TB_TWOARG(Less),
+    TB_TWOARG(LessEqual),
+    TB_TWOARG(Greater),
+    TB_TWOARG(GreaterEqual),
+    TB_TWOARG(And),
+    TB_TWOARG(Or),
+    TB_TWOARG(Equal),
+    TB_TWOARG(NotEqual),
+    TB_TWOARG(ListCons),
+    TB_TWOARG(ListEq),
+
+    ListCar(x2): FunCall(Ident("car1"),x2::ExpList0),
+    ListCdr(x2): FunCall(Ident("cdr1"),x2::ExpList0),
+
+    FunCall(name, args): FunCall(name, timebound_sigma_exps(args)),
+
+    If(x2,x3,x4): 
+      If(ListEq(timebound_sigma_exp(x2),VarId("ALL")),
+	 FunCall(Ident("lub1"),timebound_sigma_exp(x3) ::
+		 timebound_sigma_exp(x4) :: ExpList0),
+	 If(timebound_sigma_exp(x2),
+	    timebound_sigma_exp(x3),
+	    timebound_sigma_exp(x4))),
+
+    Let(var,x2,x3): Let(var,timebound_sigma_exp(x2),timebound_sigma_exp(x3)),
+    y: x,
+    )
+
+  };
