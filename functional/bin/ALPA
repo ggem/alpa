@@ -1,0 +1,11 @@
+#!/bin/tcsh
+
+cd ${0:h}/../source
+
+xrdb -merge resources
+xstdcmap -best
+
+while (1 == 1)
+  ./costbound >& /dev/null < /dev/null
+  if ($status == 0) break
+end
