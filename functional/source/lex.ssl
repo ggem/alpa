@@ -1,0 +1,57 @@
+/*****************************************************************************
+ * Lexical syntax
+ *****************************************************************************/
+WHITESPACE:		WhiteSpaceLex		 < [\ \t\n] >;
+EXP_PLACEHOLDER:	ExpPlaceholderLex	 < "<exp>" >;
+IDENT_PLACEHOLDER:	IdentPlaceholderLex	 < "<ident>" >;
+LET	:	LetLex		< "let"|"LET" >;
+IN	:	InLex		< "in"|"IN" >;
+END	:	EndLex		< "end"|"END" >;
+IF	:	IfLex		< "if"|"IF" >;
+THEN	:	ThenLex		< "then"|"THEN" >;
+ELSE	:	ElseLex		< "else"|"ELSE" >;
+TRUE	:	TrueLex		< "true"|"TRUE" >;
+FALSE	:	FalseLex	< "false"|"FALSE" >;
+EQUAL	:	EqualLex	< "==" >;
+NOTEQUAL:	NotEqualLex	< "!=" >;
+LESSEQUAL:	LessEqualLex	< "<=" >;
+GREATEREQUAL:	GreaterEqualLex	< ">=" >;
+
+
+ATOM : AtomLex < "atom?"|"ATOM?" >;
+CAR  : CarLex  < "car"|"CAR" >;
+CDR  : CdrLex  < "cdr"|"CDR" >;
+CONS : ConsLex < "cons"|"CONS" >;
+NULL : NullLex < "null?"|"null?" >;
+NIL  : NilLex  < "nil"|"NIL" >;
+EQ   : EqLex   < "eq?"|"EQ?" >;
+
+INTEGER	:	IntLex		< [0-9]+ >;
+ID	:	IdLex < '?[A-Za-z][A-Za-z0-9\._?$]*[']*|[_]|[?]|[0-9]*[a-z]* >;
+QUOTE	:	QuoteLex	<\"((\"\")|[^\"])((\"\")|[^\"])+\" >;
+
+/*****************************************************************************
+ * Token precedences for concrete input syntax
+ *****************************************************************************/
+nonassoc LET, '=', IN, END, IF, THEN, ELSE;
+left '|';
+left '&';
+nonassoc EQUAL, NOTEQUAL;
+nonassoc '<', LESSEQUAL, '>', GREATEREQUAL;
+left '+', '-';
+left '*', '/';
+right '!';
+right '~';
+nonassoc TRUE, FALSE, INTEGER, ID, '(', ')', EXP_PLACEHOLDER;
+
+/*****************************************************************************
+ * Style declarations
+ *****************************************************************************/
+style Normal, Text, Keyword, Placeholder, Punctuation, Operator;
+# define TX(tx)		"%S(Text:tx%S)"
+# define KW(kw)		"%S(Keyword:kw%S)"
+# define KW1(kw)	"%S(Keyword:kw%S) "
+# define PH(ph)		"%S(Placeholder:<ph>%S)"
+# define PT(pt)		"%S(Punctuation:" pt "%S)"
+# define OP(op)		"%S(Operator:op%S)"
+# define OP2(op)	" %o%S(Operator:op%S) "
