@@ -1,0 +1,114 @@
+/*
+ * free vars
+ */
+
+idList fvars(exp e) {
+  with (e) (
+    VoidExp():  IdList0(),
+    Constant(c):IdList0(),
+    Quote(e):	IdList0(),
+    VarRef(id): IdList2(id,IdList0()),
+    Lambda(ids,body): diffIds(fvars(body),ids),
+    App(rator,rands): unionIds(fvars(rator),fvarsl(rands)),
+    If(e1,e2,e3): unionIds(fvars(e1),unionIds(fvars(e2),fvars(e3))),
+    Let(b,body): unionIds(fvarsb(b),diffIds(fvars(body),bind2vars(b))),
+    LetRec(b,body): unionIds(fvarsb(b),diffIds(fvars(body),bind2vars(b))),
+    SetBang(v,e1): fvars(e1),
+    Begin(e1,e2): unionIds(fvars(e1),fvars(e2)),
+    PrimApp(op,rands): fvarsl(rands),
+    HalfCPS(id,e1,e2): unionIds(IdList2(id,IdList0()),
+				unionIds(fvars(e1),fvars(e2))),
+    Hilite(e1): fvars(e1)
+    )
+  };
+
+idList fvarsl(expList l) {
+  with (l) (
+    ExpList0(): IdList0(),
+    ExpList2(e1,l1): unionIds(fvars(e1),fvarsl(l1))
+    )
+  };
+
+idList fvarsb(bindings b) {
+  with (b) (
+    BindList0(): IdList0(),
+    BindList2(b1,b2):
+      with(b1) (
+	VoidBinding(): fvarsb(b2),
+	Bind(id,e): unionIds(fvars(e),fvarsb(b2))
+      )
+    )
+  };
+
+
+idList unionIds(idList l1, idList l2) {
+  with (l1) (
+    IdList0(): l2,
+    IdList2(id,l11): idmemq(id,l2) ? unionIds(l11,l2) : IdList2(id,unionIds(l11,l2))
+    )
+  };
+
+
+idList diffIds(idList l1, idList l2) {
+  with (l1) (
+    IdList0(): l1,
+    IdList2(id,l11): idmemq(id,l2) ? diffIds(l11,l2) : IdList2(id,diffIds(l11,l2))
+    )
+  };
+
+BOOL idmemq(ID id, idList l) {
+  with (l) (
+    IdList0(): false,
+    IdList2(id2,l2): id==id2 ? true : idmemq(id,l2)
+    )
+  };
+
+
+expList bind2exps(bindings l) {
+  with (l) (
+    BindList0(): ExpList0(),
+    BindList2(b,l2):
+      with (b) (
+	VoidBinding():	bind2exps(l2),
+	Bind(id,e):	ExpList2(e,bind2exps(l2))
+        )
+    )
+  };
+
+idList bind2vars(bindings l) {
+  with (l) (
+    BindList0(): IdList0(),
+    BindList2(b,l2): 
+      with (b) (
+	VoidBinding():	bind2vars(l2),
+	Bind(id,e):	IdList2(id,bind2vars(l2))
+	)
+
+    )
+  };
+
+idList snoc(idList l, ID id) {
+  with (l) (
+    IdList0(): IdList2(id,l),
+    IdList2(id2,l2): IdList2(id2,snoc(l2,id))
+    )
+  };
+
+ID mygensym(ID var,idList fvars) {
+  idmemq(var,fvars) ? mygensym2(var,fvars,1) : var
+  };
+
+ID mygensym2(ID var, idList fvars, INT n) {
+  let newid = var # INTtoSTR(n) in (
+    idmemq(newid,fvars) ? mygensym2(var,fvars, n+1) : newid
+    )
+  };
+
+expList snocExp(expList l, exp e) {
+  with (l) (
+    ExpList0(): ExpList2(e,l),
+    ExpList2(e2,l2): ExpList2(e2,snocExp(l2,e))
+    )
+  };
+
+
