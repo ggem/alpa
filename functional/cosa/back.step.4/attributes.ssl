@@ -1,0 +1,79 @@
+/*
+ * Attibution rules for "simple" is the expression simple?
+ */
+
+exp	{synthesized BOOL simple;};
+expList {synthesized BOOL simple;};
+bindings{synthesized BOOL simple;};
+binding {synthesized BOOL simple;};
+
+exp : VoidExp	{ exp$1.simple = true; }
+    | Constant	{ exp$1.simple = true; }
+    | Quote	{ exp$1.simple = true; }
+    | VarRef	{ exp$1.simple = true; }
+    | Lambda	{ exp$1.simple = true; }
+    | App	{ exp$1.simple = false; }
+    | If	{ exp$1.simple = exp$2.simple&&exp$3.simple&&exp$4.simple;}
+    | Let	{ exp$1.simple = bindings.simple && exp$2.simple; }
+    | LetRec	{ exp$1.simple = bindings.simple && exp$2.simple; }
+    | SetBang   { exp$1.simple = exp$2.simple; }
+    | Begin	{ exp$1.simple = exp$2.simple && exp$3.simple; }
+    | PrimApp	{ exp$1.simple = expList.simple; }
+    | HalfCPS	{ exp$1.simple = false; }
+    | Hilite	{ exp$1.simple = exp$2.simple; }
+    ;
+
+expList : ExpList0 { expList$1.simple = true; }
+	| ExpList2 { expList$1.simple = exp.simple && expList$2.simple; }
+	;
+
+bindings: BindList0 { bindings$1.simple = true; }
+	| BindList2 { bindings$1.simple = binding.simple&&bindings$2.simple;}
+	;
+
+binding	: VoidBinding	{ binding$1.simple = true; }
+	| Bind		{ binding$1.simple = exp.simple; }
+	;
+
+
+/*
+ * Attibution rules for "fvars" fvars is the list of free variables in a exp
+ */
+
+exp	{synthesized idList fvars;};
+expList {synthesized idList fvars;};
+bindings{synthesized idList fvars;};
+binding {synthesized idList fvars;};
+
+exp : VoidExp	{ exp$1.fvars = IdList0(); }
+    | Constant	{ exp$1.fvars = IdList0(); }
+    | Quote	{ exp$1.fvars = IdList0(); }
+    | VarRef	{ exp$1.fvars = IdList2(ID,IdList0()); }
+    | Lambda	{ exp$1.fvars = exp$2.fvars; }
+    | App	{ exp$1.fvars = unionIds(exp$2.fvars,expList.fvars); }
+    | If	{ exp$1.fvars = unionIds(exp$2.fvars,
+				unionIds(exp$3.fvars,exp$4.fvars));}
+    | Let	{ exp$1.fvars = unionIds(bindings.fvars,
+				diffIds(exp$2.fvars,bind2vars(bindings)));}
+    | LetRec	{ exp$1.fvars = unionIds(bindings.fvars,
+				diffIds(exp$2.fvars,bind2vars(bindings))); }
+    | SetBang   { exp$1.fvars = exp$2.fvars; }
+    | Begin	{ exp$1.fvars = unionIds(exp$2.fvars, exp$3.fvars); }
+    | PrimApp	{ exp$1.fvars = expList.fvars; }
+    | HalfCPS	{ exp$1.fvars = unionIds(IdList2(ID,IdList0()),unionIds(exp$2.fvars,exp$3.fvars));}
+    | Hilite	{ exp$1.fvars = exp$2.fvars; }
+    ;
+
+expList : ExpList0 { expList$1.fvars = IdList0(); }
+	| ExpList2 { expList$1.fvars = unionIds(exp.fvars,expList$2.fvars); }
+	;
+
+bindings: BindList0 { bindings$1.fvars = IdList0(); }
+	| BindList2 { bindings$1.fvars = unionIds(binding.fvars,bindings$2.fvars);}
+	;
+
+binding	: VoidBinding	{ binding$1.fvars = IdList0(); }
+	| Bind		{ binding$1.fvars = exp.fvars; }
+	;
+
+
