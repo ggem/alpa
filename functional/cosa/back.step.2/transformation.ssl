@@ -1,0 +1,241 @@
+/*****************************************************************************
+ * transformations
+ *****************************************************************************/
+transform exp
+
+/*****************************************************************************
+ * constructor applications
+ *****************************************************************************/
+  on "C_lift-1-if*"	FunCall(c,ExpList2(If(e11,e12,e13),l))
+			when (isCon(c,e11.conEnv)):
+			    If(e11,FunCall(c,e12::l),FunCall(c,e13::l)),
+  on "C_lift-1-let*"	FunCall(c,ExpList2(Let(v,e11,e12),l))
+			when (isCon(c,e11.conEnv)):
+			    Let(v,e11,FunCall(c,ExpList2(e12,l))),
+
+  on "C_lift-2-if*"	FunCall(c,ExpList2(e1,ExpList2(If(e21,e22,e23),l)))
+			when (isCon(c,e1.conEnv)):
+			    If(e21,FunCall(c,e1::e22::l),
+				   FunCall(c,e1::e23::l)),
+  on "C_lift-2-let*"	FunCall(c,ExpList2(e1,ExpList2(Let(v,e21,e22),l)))
+			when (isCon(c,e1.conEnv)):
+			    Let(v,e21,FunCall(c,ExpList2(e1,ExpList2(e22,l)))),
+
+  on "C_lift-3-if*"	FunCall(c,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(If(e31,e32,e33),l))))
+			when (isCon(c,e1.conEnv)):
+			    If(e31,FunCall(c,e1::e2::e32::l), 
+				   FunCall(c,e1::e2::e33::l)),
+  on "C_lift-3-let*"	FunCall(c,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(Let(v,e31,e32),l))))
+			when (isCon(c,e1.conEnv)):
+			    Let(v,e31,FunCall(c,e1::e2::e32::l)),
+
+  on "C_lift-4-if*"	FunCall(c,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(e3,
+				  ExpList2(If(e41,e42,e43),l)))))
+			when (isCon(c,e1.conEnv)):
+			    If(e41,FunCall(c,e1::e2::e3::e42::l), 
+				   FunCall(c,e1::e2::e3::e43::l)),
+  on "C_lift-4-let*"	FunCall(c,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(e3,
+				  ExpList2(Let(v,e41,e42),l)))))
+			when (isCon(c,e1.conEnv)):
+			    Let(v,e41,FunCall(c,e1::e2::e3::e42::l)),
+
+  on "C_con-de*"	FunCall(c,l) when (isConDe(c,l,l.conEnv)):
+			    conDe(c,l,l.conEnv),
+
+/*****************************************************************************
+ * primitive function applications.
+ * optimizations on con, int, bool, equality are listed separately below.
+ *****************************************************************************/
+  on "P_lift-1-if*"	e when (isP1If(e,e.conEnv)): p1If(e,e.conEnv),
+  on "P_lift-1-let*"	e when (isP1Let(e,e.conEnv)): p1Let(e,e.conEnv),
+  on "P_lift-2-if*"	e when (isP2If(e)): p2If(e),
+  on "P_lift-2-let*"	e when (isP2Let(e)): p2Let(e),
+
+/*****************************************************************************
+ * primitive functions for destructors and tests on constructor applications
+ *****************************************************************************/
+  on "P_test-con*"	FunCall(t,l) when (isConTest(t,l.conEnv)):
+			    conTest(t,l,l.conEnv),
+
+  on "P_de-con*"	FunCall(d,l) when (isDeCon(d,l,l.conEnv)):
+			    deCon(d,l,l.conEnv),
+
+/*****************************************************************************
+ * primitive functions on integers
+ *****************************************************************************/
+  on "P_neg-neg*"	Neg(Neg(e)): e,
+
+  on "P_sum-0*"		Sum(e,IntOp(0)): e,
+  on "P_sum-0*"		Sum(IntOp(0),e): e,
+  on "P_sum-neg*"	Sum(e1,Neg(e2)): Diff(e1,e2),
+  on "P_neg-sum*"	Sum(Neg(e1),e2): Diff(e2,e1),
+  on "P_sum*"		Sum(IntOp(n1),IntOp(n2)):
+			    let n=n1+n2 in(n>=0 ? IntOp(n) : Neg(IntOp(-n))),
+
+  on "P_diff-0*"	Diff(e,IntOp(0)): e,
+  on "P_0-diff*"	Diff(IntOp(0),e): Neg(e),
+  on "P_diff-eq*"	Diff(e,e): IntOp(0),
+  on "P_diff-neg*"	Diff(e1,Neg(e2)): Sum(e1,e2),
+  on "P_neg-diff*"	Diff(Neg(e1),e2): Neg(Sum(e1,e2)),
+  on "P_diff*"		Diff(IntOp(n1),IntOp(n2)):
+			    let n=n1-n2 in(n>=0 ? IntOp(n) : Neg(IntOp(-n))),
+
+  on "P_prod-0*"	Prod(e,IntOp(0)): IntOp(0),
+  on "P_prod-0*"	Prod(IntOp(0),e): IntOp(0),
+  on "P_prod-1*"	Prod(e,IntOp(1)): e,
+  on "P_prod-1*"	Prod(IntOp(1),e): e,
+  on "P_prod-neg*"	Prod(Neg(e1),e2): Neg(Prod(e1,e2)),
+  on "P_prod-neg*"	Prod(e1,Neg(e2)): Neg(Prod(e1,e2)),
+  on "P_prod*"		Prod(IntOp(n1),IntOp(n2)):
+			    let n=n1*n2 in(n>=0 ? IntOp(n) : Neg(IntOp(-n))),
+
+  on "P_0-quot*"	Quot(IntOp(0),e): IntOp(0),
+  on "P_quot-1*"	Quot(e,IntOp(1)): e,
+  on "P_quot-neg*"	Quot(Neg(e1),e2): Neg(Quot(e1,e2)),
+  on "P_quot-neg*"	Quot(e1,Neg(e2)): Neg(Quot(e1,e2)),
+  on "P_quot*"		Quot(IntOp(n1),IntOp(n2)) when (n2!=0):
+			    let n=n1%n2 in(n>=0 ? IntOp(n) : Neg(IntOp(-n))),
+
+  on "P_less"		Less(IntOp(n1),IntOp(n2)): (n1<n2 ? BoolOp(true) : BoolOp(false)),
+
+/*****************************************************************************
+ * primitive functions on booleans
+ *****************************************************************************/
+  on "P_not-true*"	Not(BoolOp(true)): BoolOp(false),
+  on "P_not-false*"	Not(BoolOp(false)): BoolOp(true),
+  on "P_not-not*"	Not(Not(e)): e,
+
+  on "P_and-true*"	And(e,BoolOp(true)): e,
+  on "P_and-true*"	And(BoolOp(true),e): e,
+  on "P_and-false*"	And(e,BoolOp(false)): BoolOp(false),
+  on "P_and-false*"	And(BoolOp(false),e): BoolOp(false),
+  on "P_and-not*"	And(e,Not(e)): BoolOp(false),
+  on "P_and-not*"	And(Not(e),e): BoolOp(false),
+
+  on "P_or-true*"	Or(e,BoolOp(true)): BoolOp(true),
+  on "P_or-true*"	Or(BoolOp(true),e): BoolOp(true),
+  on "P_or-false*"	Or(BoolOp(false),e): e,
+  on "P_or-false*"	Or(e,BoolOp(false)): e,
+  on "P_or-not*"	Or(e,Not(e)): BoolOp(true),
+  on "P_or-not*"	Or(Not(e),e): BoolOp(true),
+
+/*****************************************************************************
+ * primitive functions on equality test
+ *****************************************************************************/
+  on "P_simp-eq-true"	Equal(e,BoolOp(true)): e,
+  on "P_simp-eq-true"	Equal(BoolOp(true),e): e,
+
+  on "P_eq-true*"	Equal(e,e): BoolOp(true),
+  on "P_neq-false*"	NotEqual(e,e): BoolOp(false),
+
+/*****************************************************************************
+ * function applications
+ *****************************************************************************/
+  on "F_lift-1-if*"	FunCall(f,ExpList2(If(e11,e12,e13),l))
+			when (defined(f,e11.funEnv)):
+			    If(e11,FunCall(f,e12::l),FunCall(f,e13::l)),
+  on "F_lift-1-let*"	FunCall(f,ExpList2(Let(v,e11,e12),l))
+			when (defined(f,e11.funEnv)):
+			    Let(v,e11,FunCall(f,ExpList2(e12,l))),
+
+  on "F_lift-2-if*"	FunCall(f,ExpList2(e1,ExpList2(If(e21,e22,e23),l)))
+			when (defined(f,e1.funEnv)):
+			    If(e21,FunCall(f,e1::e22::l), 
+				   FunCall(f,e1::e23::l)),
+  on "F_lift-2-let*"	FunCall(f,ExpList2(e1,ExpList2(Let(v,e21,e22),l))):
+			    Let(v,e21,FunCall(f,ExpList2(e1,ExpList2(e22,l)))),
+
+  on "F_lift-3-if*"	FunCall(f,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(If(e31,e32,e33),l))))
+			when (defined(f,e1.funEnv)):
+			    If(e31,FunCall(f,e1::e2::e32::l), 
+				   FunCall(f,e1::e2::e33::l)),
+  on "F_lift-3-let*"	FunCall(f,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(Let(v,e31,e32),l))))
+			when (defined(f,e1.funEnv)):
+			    Let(v,e31,FunCall(f,e1::e2::e32::l)),
+
+  on "F_lift-4-if*"	FunCall(f,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(e3,
+				  ExpList2(If(e41,e42,e43),l)))))
+			when (defined(f,e1.funEnv)):
+			    If(e41,FunCall(f,e1::e2::e3::e42::l), 
+				   FunCall(f,e1::e2::e3::e43::l)),
+  on "F_lift-4-let*"	FunCall(f,ExpList2(e1,
+				  ExpList2(e2,
+				  ExpList2(e3,
+				  ExpList2(Let(v,e41,e42),l)))))
+			when (defined(f,e1.funEnv)):
+			    Let(v,e41,FunCall(f,e1::e2::e3::e42::l)),
+
+
+  on "F_unfold-funEnv*"	FunCall(f,ps) when (defined(f,ps.funEnv)): 
+			    unfold(f,ps,ps.funEnv,ps.idEnv),
+  on "fold-funEnv?"	e: foldInFunDefs(e,e.funEnv),
+
+/*****************************************************************************
+ * conditional expression
+ *****************************************************************************/
+  on "IF_lift-1-if*"	If(If(e11,e12,e13),e2,e3): 
+			    If(e11,If(e12,e2,e3),If(e13,e2,e3)),
+  on "IF_lift-1-let*" 	If(Let(v,e11,e12),e2,e3): Let(v,e11,If(e12,e2,e3)),
+
+  on "IF_cond-true*"	If(BoolOp(true),e2,e3):e2,
+  on "IF_cond-false*"	If(BoolOp(false),e2,e3):e3,
+
+  on "IF_merge*"	If(e1,e2,e2): e2,
+  on "IF_merge-negs*"	If(a,e2,If(Not(a),e2,e3)): e2,
+  on "IF_merge-negs*"	If(Not(a),e2,If(a,e2,e3)): e2,
+  on "IF_merge-<=*"	If(Less(a,b),e21,If(Equal(a,b),e22,e3)):
+			    If(LessEqual(a,b),e21,e3),
+  on "IF_merge->=*"	If(Greater(a,b),e21,If(Equal(a,b),e22,e3)):
+			    If(GreaterEqual(a,b),e21,e3),
+  on "IF_merge-lets*"	If(a,Let(v,e1,e2),Let(v,e1,e3)):
+			    Let(v,e1,If(a,e2,e3)),
+
+/*****************************************************************************
+ * binding expression
+ *****************************************************************************/
+  on "LET_lift-1-if*" 	Let(v,If(e11,e12,e13),e2): 
+			    If(e11,Let(v,e12,e2),Let(v,e13,e2)),
+  on "LET_lift-1-let*" 	Let(v,Let(v1,e11,e12),e2): Let(v1,e11,Let(v,e12,e2)),
+
+  on "LET_bound-var*"	Let(v,u,e2): stExp(e2,v,u),
+
+  on "LET_unfold*"	Let(v,e1,e2) when (unfoldableLet(v,e1,e2)):
+			    stExp(e2,v,e1),
+
+/*****************************************************************************
+ * other simplifications
+ *****************************************************************************/
+  on "de-con-all*"	e: deConAll(e,e.conEnv),
+
+  on "lift-all-if*"	FunCall(f,ps): applyIf(FunCall(f,ps)),
+
+/*****************************************************************************
+ *  dead code elimination
+ *****************************************************************************/
+
+/*****************************************************************************
+ * misc
+ *****************************************************************************/
+  on "rename-bound-var"	e: renameBdIdsInExp(e,freeIdsInExp(e))
+	;
+
+
+transform program
+
+  on "step-counting"	p: step_counting(p),
+
+  on "timebound"	p: timebound(p);
