@@ -1,0 +1,54 @@
+/*****************************************************************************
+ * $unfoldableLet$ tests if a let expression $Let v=e1 in e2$ is unfodable,
+ *   i.e., if $e1$ is var or $v$ occurs at most once on every path in $e2$.
+ * $countVarOccur$ returns the number of occurrences of var $ve$ in exp $e$.
+ *****************************************************************************/
+BOOL unfoldableLet(id i, exp e1, exp e2) {
+    with (e1) (
+	VarId(ID1): true,
+	*:  with (i) (
+		IdNull: false,				/* should not happen */
+		Ident(ID): countVarOccur(i,e2)<=1
+		)
+	)
+    };
+
+INT countVarOccur(id i, exp e) {
+    with (e) (
+	VoidExp: 0,					/* should not happen */
+	VarId(ID): i==Ident(ID) ? 1 : 0,
+
+	IntOp(INT): 0,
+	BoolOp(BOOL): 0,
+
+	Neg(e1): countVarOccur(i,e1),
+	Sum(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Diff(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Prod(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Quot(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Less(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	LessEqual(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Greater(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	GreaterEqual(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Not(e1): countVarOccur(i,e1),
+	And(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Or(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	Equal(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	NotEqual(e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+
+	FunCall(f,ps): countVarOccurExpList(i,ps),
+
+	If(e1,e2,e3): Max(countVarOccur(i,e1)+countVarOccur(i,e2),
+			  countVarOccur(i,e1)+countVarOccur(i,e3)),
+
+	Let(v,e1,e2): countVarOccur(i,e1)+countVarOccur(i,e2),
+	x: 0,			/* INCORRECT,  TO CHANGE LATER */
+	)
+    };
+
+INT countVarOccurExpList(id i, expList l) {
+    with (l) (
+	ExpList0: 0,
+	ExpList2(e1,l1): countVarOccur(i,e1)+countVarOccurExpList(i,l1)
+	)
+    };
