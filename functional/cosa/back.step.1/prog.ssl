@@ -1,0 +1,29 @@
+root program;
+/******************************************************************************
+ * Abstract syntax for $program$ with $Prog$
+ *****************************************************************************/
+program	:	Prog ( funDefs conDesSet exp )
+	;
+/* Minimal parenthesization -------------------------------------- */
+program	:	Prog { exp.precedence = 0; }
+	;
+/*****************************************************************************
+ * Attribution rules for $program$ with $Prog$
+ *****************************************************************************/
+program :	Prog { /* exp = FunDef(id, expList$2); */
+		       exp.funEnv = funDefs;
+		       exp.conEnv = unionConDesSet(conDesSet, initConDesSet());
+
+		       exp.idEnv = exp.idCollect; }
+	;
+
+/*****************************************************************************
+ * Unparsing for $program$ with $Prog$ 
+ *****************************************************************************/
+program	:	Prog [ ^ ::= TX(FUNCTION DEFINITIONS:) "%n" @ "%n"
+			     ..
+			     TX(EXPRESSION TO BE TRANSFORMED:) "%n" @ ]
+	|	Prog [ ^ ::= ..
+			     TX(CONSTRUCTOR DEFINITIONS:) "%n" @ "%n"
+			     .. ]
+	;
