@@ -1,0 +1,86 @@
+/**
+ *    Step Counting transformation
+ **/
+
+program step_counting(program p) {
+  with (p) (
+    Prog(fundefs, condesset, e):
+      Prog(step_counting_fundefs(fundefs), condesset, e)
+    )
+  };
+
+
+funDefs step_counting_fundefs(funDefs fl) {
+  with (fl) (
+    FunDefs0() : fl,
+    FunDefs2(f,fl): 
+      FunDefs2(step_counting_fundef(f),FunDefs2(f,step_counting_fundefs(fl)))
+    )
+  };
+
+
+
+funDef step_counting_fundef(funDef f) {
+  with (f) (
+    VoidFunDef(): f,
+    FunDefinition(IdNull, args, body):
+      FunDefinition(Ident("time_nonamed"), args, step_counting_exp(body)),
+    FunDefinition(Ident(name), args, body):
+      FunDefinition(Ident("time_"#name), args, step_counting_exp(body))
+    )
+  };
+
+exp step_counting_exps(expList l) {
+  with (l) (
+    ExpList0(): VoidExp,
+    ExpList2(x,ExpList0): step_counting_exp(x),
+    ExpList2(x,l2): Sum(step_counting_exp(x),step_counting_exps(l2)),
+    )
+  };
+
+#define TWOEXPSOP(op,time) \
+  op(x2,x3): Sum(VarId(time),Sum(step_counting_exp(x2),step_counting_exp(x3)))
+
+exp step_counting_exp(exp x) {
+  with (x) (
+    VoidExp(): x,
+    VarId(ID): VarId("TIME_VARREF"),
+    IntOp(n): VarId("TIME_CONSTANT"),
+    BoolOp(n): VarId("TIME_CONSTANT"),
+    ListNil(): VarId("TIME_CONSTANT"),
+    Not(x2): Sum(VarId("TIME_BOOLEANOP"),step_counting_exp(x2)),
+    Neg(x2): Sum(VarId("TIME_NEGATION"),step_counting_exp(x2)),
+    ListCar(x2): Sum(VarId("TIME_CAR"),step_counting_exp(x2)),
+    ListCdr(x2): Sum(VarId("TIME_CDR"),step_counting_exp(x2)),
+    ListNull(x2): Sum(VarId("TIME_NULL"),step_counting_exp(x2)),
+    ListAtom(x2): Sum(VarId("TIME_NULL"),step_counting_exp(x2)),
+    TWOEXPSOP(Sum, "TIME_ADDITION"),
+    TWOEXPSOP(Diff,"TIME_ADDITION"),
+    TWOEXPSOP(Prod,"TIME_MULTIPLICATION"),
+    TWOEXPSOP(Quot,"TIME_DIVISION"),
+    TWOEXPSOP(Less,"TIME_BOOLEANOP"),
+    TWOEXPSOP(LessEqual,"TIME_BOOLEANOP"),
+    TWOEXPSOP(Greater,"TIME_BOOLEANOP"),
+    TWOEXPSOP(GreaterEqual,"TIME_BOOLEANOP"),
+    TWOEXPSOP(And,"TIME_BOOLEANOP"),
+    TWOEXPSOP(Or,"TIME_BOOLEANOP"),
+    TWOEXPSOP(Equal,"TIME_BOOLEANOP"),
+    TWOEXPSOP(NotEqual,"TIME_BOOLEANOP"),
+    TWOEXPSOP(ListCons,"TIME_CONS"),
+    TWOEXPSOP(ListEq,"TIME_BOOLEANOP"),
+
+    FunCall(IdNull, args): x,
+    FunCall(Ident(f), args): Sum(VarId("TIME_FUNCALL"),
+				 Sum(FunCall(Ident("time_"#f),args),
+				     step_counting_exps(args))),
+    If(x2,x3,x4): Sum(VarId("TIME_COND"),
+		      Sum(step_counting_exp(x2),
+			  If(x2,step_counting_exp(x3),step_counting_exp(x4)))),
+
+    Let(IdNull,x2,x3): x,
+    Let(Ident(ID),x2,x3): Sum(VarId("TIME_BINDING"),
+			      Sum(step_counting_exp(x2),
+				  step_counting_exp(x3))),
+    
+    )
+  };
