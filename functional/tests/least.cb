@@ -1,0 +1,15 @@
+FUNCTION DEFINITIONS:
+least(x) =
+  if null?(cdr(x)) then
+    car(x)
+  else
+    let s = least(cdr(x))
+    in
+      if car(x) <= s then
+        car(x)
+      else
+        s
+    end;
+
+EXPRESSION TO BE TRANSFORMED:
+cost_least(length_1(car(args)))
