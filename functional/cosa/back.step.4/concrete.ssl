@@ -1,0 +1,117 @@
+/*
+ * Lexemes
+ */
+
+BEGIN:		< "begin" >;
+DEFINE:		< "define" >;
+EXP_PLACEHOLDER:< "<exp>" >;
+IF:		< "if" >;
+LAMBDA:		< "lambda" >;
+LET:		< "let" >;
+LETREC:		< "letrec" >;
+SETBANG:	< "set!" >;
+CONSTANT:	< -?[0-9]+|\#\\[a-z][a-z]*|\#\\.|\"[^\"]*\"|"#t"|"#f" >;
+PRIMITIVE:	< "+"|"-"|"*"|"zero?"|"car"|"cdr"|"cons"|"null?"|"eq?"|"list"|"<"|">"|"="|"pair?" >;
+QUOTE:		< "'" >;
+ID:		< [A-Za-z_\?-][0-9A-Za-z_\?-]* >;
+WHITESPACE:	< [\ \t\n]*|;[^\n]*\n >;
+
+/* abstract syntax attributes */
+DefList	 { synthesized defList abs; };
+Define	 { synthesized define abs; };
+Exp	 { synthesized exp abs; };
+ExpList  { synthesized expList abs; };
+Bindings { synthesized bindings abs; };
+Binding  { synthesized binding abs; };
+IdList	 { synthesized idList abs; };
+
+/* Parse Phyla */
+defList	 ~ DefList.abs;
+define	 ~ Define.abs;
+exp	 ~ Exp.abs;
+expList  ~ ExpList.abs;
+bindings ~ Bindings.abs;
+binding  ~ Binding.abs;
+idList	 ~ IdList.abs;
+
+
+/*
+ * Concrete syntax for programs
+ */
+
+DefList	::=	( Define )
+		{ DefList.abs = DefList2(Define.abs,DefList0()); }
+	|	( Define DefList )
+		{ DefList$1.abs = DefList2(Define.abs,DefList$2.abs); }
+	;
+
+
+Define	::=	( '(' DEFINE ID Exp ')' )
+		{ Define.abs = Def(ID,Exp.abs); }
+	;
+
+
+/*
+ * Concrete syntax for expressions
+ */
+
+Exp	::=	(EXP_PLACEHOLDER)
+		{ Exp.abs = VoidExp; }
+	|	( CONSTANT )
+		{ Exp.abs = Constant(CONSTANT); }
+	|	( QUOTE '(' ')' )
+		{ Exp.abs = Constant("'()"); }
+	|	( QUOTE Exp )
+		{ Exp$1.abs = Quote(Exp$2.abs); }
+	|	( ID )
+		{ Exp.abs = VarRef(ID); }
+	|	( '(' LAMBDA '(' IdList ')' Exp ')' )
+		{ Exp$1.abs = Lambda(IdList.abs,Exp$2.abs); }
+	|	( '(' IF Exp Exp Exp ')' )
+		{ Exp$1.abs=If(Exp$2.abs,Exp$3.abs,Exp$4.abs); }
+	|	( '(' LET '(' Bindings ')' Exp ')' ) 
+		{ Exp$1.abs = Let(Bindings.abs,Exp$2.abs); }
+	|	( '(' LETREC '(' Bindings ')' Exp ')' )
+		{ Exp$1.abs = LetRec(Bindings.abs,Exp$2.abs); }
+	|	( '(' BEGIN Exp Exp ')' )
+		{ Exp$1.abs = Begin(Exp$2.abs,Exp$3.abs); }
+	|	( '(' SETBANG ID Exp ')' )
+		{ Exp$1.abs = SetBang(ID,Exp$2.abs); }
+	|	( '(' PRIMITIVE ExpList ')' )
+		{ Exp.abs = PrimApp(PRIMITIVE,ExpList.abs); }
+	|	( '(' Exp ExpList ')' )
+		{ Exp$1.abs = App(Exp$2.abs,ExpList.abs); }
+	;
+
+
+ExpList	::=	()
+		{ ExpList.abs = ExpList0; }
+	|	( Exp ExpList)
+		{ ExpList$1.abs = Exp.abs :: ExpList$2.abs; }
+	;
+
+
+/*
+ * Concrete syntax for bindings
+ */
+
+Binding	::=	( '(' ID Exp ')' )
+		{ Binding.abs = Bind(ID,Exp.abs); }
+	;
+
+Bindings::=	( )
+		{ Bindings.abs = BindList0; }
+	|	( Binding Bindings )
+		{ Bindings$1.abs = 
+			BindList2(Binding.abs,Bindings$2.abs); }
+	;
+
+IdList	::=	( )
+		{ IdList.abs = IdList0; }
+	|	( ID IdList )
+		{ IdList$1.abs = IdList2(ID,IdList$2.abs); }
+	;
+
+
+
+
