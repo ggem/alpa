@@ -1,0 +1,162 @@
+/*
+ * Style declarations
+ */
+
+#define TEXT	"%S(Text:" 
+#define KEYW	"%S(Keyword:"
+#define PLHL	"%S(Placeholder:"
+#define BIND	"%S(Binding:"
+#define HILT	"%S(Hilite:"
+#define CPS	"%S(MarkedCPS:"
+#define DFLT	"%S)"
+
+/*
+ * Unparsing for programs, BASEVIEW
+ */
+
+defList	:	DefList2	[ @ ::= ^ ["%n%n"] @ ]
+	;
+
+define	:	VoidDefine	[ @ ::= PLHL "<definition>" DFLT ]
+	|	Def		[ ^ ::= "(" KEYW "define" DFLT 
+					" %[%o" BIND @ DFLT
+					" %o" @ "%])" ]
+	;
+
+
+/*
+ * Unparsing for expressions, BASEVIEW
+ */
+
+exp	:	VoidExp	[ @ ::= PLHL "<exp>" DFLT ]
+	|	Constant[ @ ::= ^ ]
+	|	Quote	[ @ ::= "'" @ ]
+	|	VarRef	[ @ ::= @ ]
+	|	Lambda	[ @ ::= "(" KEYW "lambda" DFLT
+				" %o%[(" BIND @ DFLT ")%]"
+				" %o%t" @ "%b)" ]
+	|	App	[ @ ::= "(" @ "%[" @ "%])" ]
+	|	If	[ @ ::= "(" KEYW "if" DFLT
+				" %[" @ " %c" @ 
+				" %c" @ "%])" ]
+	|	Let	[ @ ::= "(" KEYW "let" DFLT
+				" %[%o(%[" @ "%])"
+				"%n" @ "%])" ]
+	|	LetRec	[ @ ::= "(" KEYW "letrec" DFLT
+				" %[%o(%[" @ "%])"
+				" %o" @ "%])" ]
+	|	SetBang	[ @ ::= "(" KEYW "set!" DFLT
+				" %[%o" BIND @ DFLT
+				" %o" @ "%])" ]
+	|	Begin	[ @ ::= "(" KEYW "begin" DFLT
+				" %[%o" @ " %o" @ "%])" ]
+	|	PrimApp	[ @ ::= "(" @ "%[" @ "%])" ]
+	|	HalfCPS [ @ ::= CPS "(" DFLT @ " " @ CPS " " @ ")" DFLT ]
+	|	Hilite	[ @ ::= HILT @ DFLT ]
+	;
+
+
+expList	:	ExpList0[ @ ::= ]
+	|	ExpList2[ @ ::= " " @ ["%c"] @ ]
+	;
+
+
+/*
+ * Unparsing for bindings, BASEVIEW
+ */
+
+binding	:	VoidBinding	[ @ ::= PLHL "<binding>" DFLT ]
+	|	Bind		[ @ ::= "(" BIND @ DFLT
+					" %[" @ "%])" ]
+	;
+
+bindings:	BindList0	[ @ ::= ]
+	|	BindList2	[ @ ::= @ [" %c"] @ ]
+	;
+
+
+idList	:	IdList0		[ @ ::= ]
+	|	IdList2		[ @ ::= @ [" %c"] @ ]
+	;
+
+
+view FIXEDVIEW;
+
+/*
+ * Unparsing for programs, FIXEDVIEW
+ */
+
+defList	:	DefList2	[ FIXEDVIEW @ ::= ^ ["%n%n"] @ ]
+	;
+
+define	:	VoidDefine	[ FIXEDVIEW @ ::= PLHL "<definition>" DFLT ]
+	|	Def		[ FIXEDVIEW ^ ::= "(" KEYW "define " DFLT 
+					BIND @ DFLT
+					"%t" @ "%b)" ]
+	;
+
+
+/*
+ * Unparsing for expressions, FIXEDVIEW
+ */
+
+exp	:	VoidExp	[ FIXEDVIEW @ ::= PLHL "<exp>" DFLT ]
+	|	Constant[ FIXEDVIEW @ ::= @ ]
+	|	Quote	[ FIXEDVIEW @ ::= "'" @ ]
+	|	VarRef	[ FIXEDVIEW @ ::= @ ]
+	|	Lambda	[ FIXEDVIEW @ ::= "%n%{%c(" KEYW "lambda" DFLT
+				" (%t%t%t%t%{" BIND @ DFLT "%}%b%b%b%b)"
+				" %t%n" @ "%b)%}" ]
+	|	App	[ FIXEDVIEW @ ::= "(" @ "%t%{" @ "%b%})" ]
+	|	If	[ FIXEDVIEW @ ::= "(" KEYW "if" DFLT
+				" " @ "%t%n" @ 
+				"%n" @ "%b)" ]
+	|	Let	[ FIXEDVIEW @ ::= "(" KEYW "let" DFLT
+				" (%t%t%t%{" @ "%}%b%b%b)"
+				"%t%n" @ "%b)" ]
+	|	LetRec	[ FIXEDVIEW @ ::= "(" KEYW "letrec" DFLT
+				" (%t%t%t%t%{" @ "%}%b%b%b%b)"
+				"%t%n" @ "%b)" ]
+	|	SetBang	[ FIXEDVIEW @ ::= "(" KEYW "set!" DFLT
+				" " BIND @ DFLT
+				"%t%n" @ "%b)" ]
+	|	Begin	[ FIXEDVIEW @ ::= "(" KEYW "begin" DFLT
+				"%t%n" @ "%n" @ "%b)" ]
+	|	PrimApp	[ FIXEDVIEW @ ::= "(" @ "%t%{" @ "%b%})" ]
+	|	HalfCPS [ FIXEDVIEW @ ::= CPS "(" DFLT @ "%t " @ CPS
+			" " @ "%b)" DFLT ]
+	|	Hilite	[ FIXEDVIEW @ ::= HILT @ DFLT ]
+	;
+
+
+expList	:	ExpList0[ FIXEDVIEW @ ::= ]
+	|	ExpList2[ FIXEDVIEW @ ::= " " @ ["%c"] @ ]
+	;
+
+
+/*
+ * Unparsing for bindings, FIXEDVIEW
+ */
+
+binding	:	VoidBinding	[ FIXEDVIEW @ ::= PLHL "<binding>" DFLT ]
+	|	Bind		[ FIXEDVIEW @ ::= "(" BIND @ DFLT
+					" %t%t" @ "%b%b)" ]
+	;
+
+bindings:	BindList0	[ FIXEDVIEW @ ::= ]
+	|	BindList2	[ FIXEDVIEW @ ::= @ [" %c"] @ ]
+	;
+
+
+idList	:	IdList0		[ FIXEDVIEW @ ::= ]
+	|	IdList2		[ FIXEDVIEW @ ::= @ [" %c"] @ ]
+	;
+
+
+#undef TEXT
+#undef KEYW
+#undef PLHL
+#undef BIND
+#undef HILT
+#undef CPS
+#undef DFLT
