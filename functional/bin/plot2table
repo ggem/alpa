@@ -1,0 +1,43 @@
+#!/bin/tcsh -f
+
+set procs = (insertsort mergesort nreverse reverse selectsort union)
+#set hosts = (ribbontail drum leopard rough school thorntail)
+set hosts = (piano)
+set filename = table.txt
+
+onintr end
+
+if ($0 =~ /*) then
+   set ALPAdir = ${0:h}/..
+else
+   set ALPAdir = `pwd`/${0:h}/..
+endif
+
+set schemedir = ${ALPAdir}/scheme
+set q = '"'
+set d = '$'
+set t = '"	"'
+set a = "'"
+set sedcmd = 's/\([0-9.][0-9.][0-9.][0-9.][0-9.][0-9.][0-9.]\)[0-9.]*/\1/g'
+
+foreach host ($hosts)
+   echo "$host"
+   cd $ALPAdir/hosts/$host
+   set awkcmd   = "{print ${d}1 $t ${d}2 $t ${d}4 $t 100*${d}4/${d}2"
+   set awkfiles = $ALPAdir/plots/$procs[1]/${host}:{computed,measured}
+   set titles  = "size	$procs[1]"
+   @ n = 2
+   foreach proc ($procs[2-])
+      @ n = $n + 4
+      @ m = $n + 2
+      set awkcmd = "$awkcmd:q $t ${d}$n $t ${d}$m $t 100*${d}$m/${d}$n"
+      set awkfiles = ($awkfiles $ALPAdir/plots/$proc/${host}:{computed,measured})
+      set titles = "$titles:q $proc"
+   end
+   set awkcmd = "${awkcmd:q}}"
+   echo $titles > $filename
+   vcat $awkfiles | awk $awkcmd:q | sed $sedcmd:q >> $filename
+end
+
+end:
+  exit 0
