@@ -1,0 +1,104 @@
+/*****************************************************************************
+ * $matchExp$ matches all identifiers in $e1$ to expressions in $e2$.
+ * $matchGoodExp$ finds the substitutions from $e1$ to $e2$, pre-processed,
+ * and returns a list of id exp pairs; if fails, it returns NOTMATCH.
+ *****************************************************************************/
+idExpPairList matchExp(exp e1, exp e2) {
+    let il=unionIdList(freeIdsInExp(e1),freeIdsInExp(e2));
+	exp1=renameBdIdsInExp(e1,il);
+	il1=unionIdList(il,idsInExp(exp1))
+    in( matchGoodExp(exp1,renameBdIdsInExp(e2,il1),IdExpPairList0) )
+    };
+
+idExpPairList matchExpList(expList el1, expList el2) {
+    let il=unionIdList(freeIdsInExpList(el1),freeIdsInExpList(el2));
+	expl1=renameBdIdsInExpList(el1,il);
+	il1=unionIdList(il,idsInExpList(expl1))
+    in( matchGoodExpList(expl1,renameBdIdsInExpList(el2,il1),IdExpPairList0) )
+    };
+
+# define NOTMATCH IdExpPairList2(VoidIdExpPair,IdExpPairList0)
+# define MATCHGOODEXP1(p) \
+    with (e2) ( \
+	p(e21): matchGoodExp(e11,e21,m), \
+	*: NOTMATCH \
+    )
+# define MATCHGOODEXP2(p) \
+    with (e2) ( \
+	p(e21,e22): \
+	    let m1=matchGoodExp(e11,e21,m) \
+	    in( (m1==NOTMATCH) ? NOTMATCH : matchGoodExp(e12,e22,m1) ), \
+	*: NOTMATCH \
+    )
+idExpPairList matchGoodExp(exp e1, exp e2, idExpPairList m) {
+    with (e1) (
+	VoidExp: NOTMATCH,				/* should not happen */
+	VarId(ID):
+	    with (e2) (
+		VoidExp: NOTMATCH,
+		*: let matchedExp=assocExpForId(Ident(ID),m)
+		   in( matchedExp==VoidExp
+			? IdExpPairList2(IdExpPair(Ident(ID),e2),m)
+			: eqExp(matchedExp,e2) ? m : NOTMATCH )
+		),
+	IntOp(INT): e2==e1 ? m : NOTMATCH,
+	BoolOp(BOOL): e2==e1 ? m : NOTMATCH,
+
+	Neg(e11): MATCHGOODEXP1(Neg),
+	Sum(e11,e12): MATCHGOODEXP2(Sum),
+	Diff(e11,e12): MATCHGOODEXP2(Diff),
+	Prod(e11,e12): MATCHGOODEXP2(Prod),
+	Quot(e11,e12): MATCHGOODEXP2(Quot),
+	Less(e11,e12): MATCHGOODEXP2(Less),
+	LessEqual(e11,e12): MATCHGOODEXP2(LessEqual),
+	Greater(e11,e12): MATCHGOODEXP2(Greater),
+	GreaterEqual(e11,e12): MATCHGOODEXP2(GreaterEqual),
+	Not(e11): MATCHGOODEXP1(Not),
+	And(e11,e12): MATCHGOODEXP2(And),
+	Or(e11,e12): MATCHGOODEXP2(Or),
+	Equal(e11,e12): MATCHGOODEXP2(Equal),
+	NotEqual(e11,e12): MATCHGOODEXP2(NotEqual),
+
+	FunCall(IdNull,ps): NOTMATCH,			/* should not happen */
+	FunCall(Ident(i1),ps1):
+	    with (e2) (
+		FunCall(Ident(i2),ps2):
+		    i1==i2 ? matchGoodExpList(ps1,ps2,m) : NOTMATCH,
+		*: NOTMATCH
+	    ),
+	If(e11,e12,e13):
+	    with (e2) (
+		If(e21,e22,e23):
+	   	    let m1=matchGoodExp(e11,e21,m) 
+		    in( m1==NOTMATCH ? NOTMATCH 
+			: let m2=matchGoodExp(e12,e22,m1)
+			  in( m2==NOTMATCH ? NOTMATCH 
+			      : matchGoodExp(e13,e23,m2) ) ),
+		*: NOTMATCH
+	    ),
+	Let(IdNull,e11,e12): NOTMATCH,			/* should not happen */
+	Let(Ident(i1),e11,e12):
+	    with (e2) (
+		Let(Ident(i2),e21,e22): 
+		  let m1 = matchGoodExp(e11,e21,m)
+		  in( m1==NOTMATCH ? NOTMATCH
+		      :let m2=IdExpPairList2(IdExpPair(Ident(i1),VarId(i2)),m1)
+		       in( matchGoodExp(e12,e22,m2) ) ),
+		*: NOTMATCH
+	    ),
+	x: NOTMATCH,			/* INCORRECT,  TO CHANGE LATER */
+	)
+    };
+
+idExpPairList matchGoodExpList (expList l1, expList l2, idExpPairList m) {
+    with (l1) (
+	ExpList0: l1==l2 ? m : NOTMATCH,
+	ExpList2(e1,l11):
+	    with (l2) (
+	      ExpList0: NOTMATCH,
+	      ExpList2(e2,l21): 
+		let m1=matchGoodExp(e1,e2,m) 
+		in( m1==NOTMATCH ? NOTMATCH : matchGoodExpList(l11,l21,m1) ),
+	      )
+	)
+    };
