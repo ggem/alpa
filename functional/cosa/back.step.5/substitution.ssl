@@ -1,0 +1,234 @@
+/*****************************************************************************
+ * substitute bound identifier $id1$ with expression $exp1$ in $exp(List)$
+ * Function names are not replaced; they use diff name space than variables.
+ *****************************************************************************/
+exp stExp(exp e, id id1, exp exp1) {
+    with (e) (
+	VoidExp: e,					/* should not happen */
+	VarId(ID): (id1 == Ident(ID)) ? exp1 : e,
+
+	IntOp(INT): e,
+	BoolOp(BOOL): e,
+
+	Neg(e1): Neg(stExp(e1,id1,exp1)),
+	Sum(e1,e2): Sum(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Diff(e1,e2): Diff(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Prod(e1,e2): Prod(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Quot(e1,e2): Quot(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Less(e1,e2): Less(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	LessEqual(e1,e2): LessEqual(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Greater(e1,e2): Greater(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	GreaterEqual(e1,e2): 
+	    GreaterEqual(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Not(e1): Not(stExp(e1,id1,exp1)),
+	And(e1,e2): And(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Or(e1,e2): Or(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	Equal(e1,e2): Equal(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+	NotEqual(e1,e2): NotEqual(stExp(e1,id1,exp1), stExp(e2,id1,exp1)),
+
+	FunCall(IdNull, ps): e,				/* should not happen */
+	FunCall(Ident(ID), ps): FunCall(Ident(ID), stExpList(ps,id1,exp1)),
+
+	If(e1,e2,e3): 
+	    If(stExp(e1,id1,exp1),stExp(e2,id1,exp1),stExp(e3,id1,exp1)),
+
+	Let(IdNull,e1,e2): e,				/* should not happen */
+	Let(Ident(ID),e1,e2): 
+	    id1!=Ident(ID)
+	    ? Let(Ident(ID), stExp(e1,id1,exp1), stExp(e2,id1,exp1))
+	    : Let(Ident(ID), stExp(e1,id1,exp1), e2),
+	)
+    };
+
+expList stExpList (expList l, id id1, exp exp1) {
+    with (l) (
+	ExpList0: ExpList0,
+	ExpList2 (e,l1): ExpList2(stExp(e,id1,exp1), stExpList(l1,id1,exp1))
+	)
+    };
+
+/*****************************************************************************
+ * $seqStExp$, for each $id1$ in $idList$ sequentially,
+ * substitutes $id1$ in $e$ with correspongind $e1$ in $ps$.  Not used.
+ *****************************************************************************/
+exp seqStExp(idList args, expList ps, exp e) {
+    with (args) (
+	IdList0: e,
+	IdList2(id1,args1): 
+	    with (ps) (
+		ExpList0: e,
+		ExpList2(e1,ps1): seqStExp(args1, ps1, stExp(e,id1,e1)),
+		)
+	)
+    };
+
+/*****************************************************************************
+ * $multiStExp$ does multiple simultaneous substitution:
+ * given an exp $e$, an idExpPairList $m$, and a list of used ids $il$, 
+ * returns the exp with identifier $i$ in $e$ replaced by $assocExpForId(i,m)$.
+ * rename bound variables to avoid conflict use for diff values when necessary.
+ *****************************************************************************/
+# define MULTISTEXP2(p) \
+    let exp1=multiStExp(e1,m,il) \
+    in( p(exp1, multiStExp(e2,m,unionIdList(il,idsInExp(exp1)))) )
+
+exp multiStExp(exp e, idExpPairList m, idList il) {
+    with (e) (
+	VoidExp: e,					/* should not happen */
+	VarId(ID):let exp1=assocExpForId(Ident(ID),m) in(exp1!=VoidExp?exp1:e),
+
+	IntOp(INT): e,
+	BoolOp(BOOL): e,
+
+	Neg(e1): Neg(multiStExp(e1,m,il)),
+	Sum(e1,e2): MULTISTEXP2(Sum),
+	Diff(e1,e2): MULTISTEXP2(Diff),
+	Prod(e1,e2): MULTISTEXP2(Prod),
+	Quot(e1,e2): MULTISTEXP2(Quot),
+	Less(e1,e2): MULTISTEXP2(Less),
+	LessEqual(e1,e2): MULTISTEXP2(LessEqual),
+	Greater(e1,e2): MULTISTEXP2(Greater),
+	GreaterEqual(e1,e2): MULTISTEXP2(GreaterEqual),
+	Not(e1): Not(multiStExp(e1,m,il)),
+	And(e1,e2): MULTISTEXP2(And),
+	Or(e1,e2): MULTISTEXP2(Or),
+	Equal(e1,e2): MULTISTEXP2(Equal),
+	NotEqual(e1,e2): MULTISTEXP2(NotEqual),
+
+	FunCall(IdNull,ps): e,				/* should not happen */
+	FunCall(Ident(ID),ps): FunCall(Ident(ID), multiStExpList(ps,m,il)),
+
+	If(e1,e2,e3): 
+	    let exp1 = multiStExp(e1,m,il); 
+		il1 = unionIdList(il,idsInExp(exp1)); 
+		exp2 = multiStExp(e2,m,il1)
+	    in( If(exp1, exp2,
+		   multiStExp(e3,m,unionIdList(il1,idsInExp(exp2)))) ),
+
+	Let(IdNull,e1,e2): e,				/* should not happen */
+	Let(Ident(ID),e1,e2): 
+	    let newID = getNewName(ID,il);
+		il0 = addInIdSet(Ident(newID),il);
+		exp1 = multiStExp(e1,m,il0);
+	    in( Let(Ident(newID), exp1,
+		    multiStExp(e2,newAssoc(m,Ident(ID),VarId(newID)),
+				  unionIdList(il0,idsInExp(exp1)))) ),
+	)
+    };
+
+expList multiStExpList (expList l, idExpPairList m, idList il) {
+    with (l) (
+	ExpList0: ExpList0,
+	ExpList2(e,l1):
+	  let exp=multiStExp(e,m,il) 
+	  in( ExpList2(exp,
+		       multiStExpList(l1,m,unionIdList(il,idsInExp(exp)))) )
+	)
+    };
+
+/*****************************************************************************
+ * $multiRevStExp: given an exp $e$ and an idExpPairList $m$, 
+ * return the exp with subexps $e1$ of $e$ replaced by $assocIdForExp(e1,m)$,
+ * with priority given to the outmost match.
+ *****************************************************************************/
+exp multiRevStExp(exp e, idExpPairList m) {
+  let i=assocIdForExp(e,m)
+  in( with (i) (
+	Ident(ID): VarId(ID),
+	*: 
+	  with (e) (
+	    VoidExp: e,					/* should not happen */
+	    VarId(ID): e,
+
+	    IntOp(INT): e,
+	    BoolOp(BOOL): e,
+
+	    Neg(e1): Neg(multiRevStExp(e1,m)),
+	    Sum(e1,e2): Sum(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Diff(e1,e2): Diff(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Prod(e1,e2): Prod(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Quot(e1,e2): Quot(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Less(e1,e2): Less(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    LessEqual(e1,e2): 
+		LessEqual(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Greater(e1,e2): Greater(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    GreaterEqual(e1,e2): 
+		GreaterEqual(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Not(e1): Not(multiRevStExp(e1,m)),
+	    And(e1,e2): And(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Or(e1,e2): Or(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    Equal(e1,e2): Equal(multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    NotEqual(e1,e2): NotEqual(multiRevStExp(e1,m),multiRevStExp(e2,m)),
+
+	    FunCall(IdNull,ps): e,			/* should not happen */
+	    FunCall(Ident(ID),ps): FunCall(Ident(ID), multiRevStExpList(ps,m)),
+
+	    If(e1,e2,e3): 
+		If(multiRevStExp(e1,m),
+		   multiRevStExp(e2,m),multiRevStExp(e3,m)),
+
+	    Let(IdNull,e1,e2): e,			/* should not happen */
+	    Let(Ident(ID),e1,e2):
+		Let(Ident(ID), multiRevStExp(e1,m), multiRevStExp(e2,m)),
+	    )
+	) )
+  };
+
+expList multiRevStExpList(expList l, idExpPairList m) {
+  with (l) (
+    ExpList0: ExpList0,
+    ExpList2(e,l1): ExpList2(multiRevStExp(e,m), multiRevStExpList(l1,m))
+    )
+  };
+
+/*****************************************************************************
+ * substitute exp $exp1 with $exp2$ in exp(List) $e(l)$.
+ *****************************************************************************/
+exp stEqualExp(exp e, exp exp1, exp exp2) {
+    e==exp1 ? exp2 
+    : with (e) (
+	VoidExp: e,
+	VarId(ID): e,
+
+	IntOp(INT): e,
+	BoolOp(BOOL): e,
+
+	Neg(e1): Neg(stEqualExp(e1,exp1,exp2)),
+	Sum(e1,e2): Sum(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	Diff(e1,e2): Diff(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	Prod(e1,e2): Prod(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	Quot(e1,e2): Quot(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	Less(e1,e2): Less(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	LessEqual(e1,e2): 
+	    LessEqual(stEqualExp(e1,exp1,exp2),stEqualExp(e2,exp1,exp2)),
+	Greater(e1,e2): 
+	    Greater(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	GreaterEqual(e1,e2): 
+	    GreaterEqual(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	Not(e1): Not(stEqualExp(e1,exp1,exp2)),
+	And(e1,e2): And(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	Or(e1,e2): Or(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	Equal(e1,e2): Equal(stEqualExp(e1,exp1,exp2),stEqualExp(e2,exp1,exp2)),
+	NotEqual(e1,e2): 
+	    NotEqual(stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+
+	FunCall(IdNull, ps): e,
+	FunCall(Ident(ID),ps): FunCall(Ident(ID),stEqualExpList(ps,exp1,exp2)),
+
+	If(e1,e2,e3): 
+	    If(stEqualExp(e1,exp1,exp2),
+	       stEqualExp(e2,exp1,exp2),stEqualExp(e3,exp1,exp2)),
+
+	Let(IdNull,e1,e2): e,
+	Let(Ident(ID),e1,e2): 
+	    Let(Ident(ID), stEqualExp(e1,exp1,exp2), stEqualExp(e2,exp1,exp2)),
+	)
+    };
+
+expList stEqualExpList (expList el, exp exp1, exp exp2) {
+    with (el) (
+	ExpList0: ExpList0,
+	ExpList2(e,el1): 
+	    ExpList2(stEqualExp(e,exp1,exp2), stEqualExpList(el1,exp1,exp2))
+	)
+    };
