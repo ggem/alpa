@@ -1,0 +1,58 @@
+/*
+ * Unparsing in a scheme kind of way
+ */
+
+#define SCHEME_HEADER \
+"(d%Lefine timebound%n(l%Let (%L[TIME_ADDITION 1]%n[TIME_BINDING 1]%n[TIME_BOOLEANOP 1]%n[TIME_CAR 1]%n[TIME_CDR 1]%n[TIME_COND 1]%n[TIME_CONS 1]%n[TIME_CONSTANT 1]%n[TIME_DIVISION 1]%n[TIME_FUNCALL 1]%n[TIME_MULTIPLICATION 1]%n[TIME_NEGATION 1]%n[TIME_NULL 1]%n[TIME_VARREF 1]%n[m%Lake-proc1%n(l%Lambda (proc)%n(l%Lambda (arg)%n(if %L(eq? arg 'ALL)%n'ALL%n(proc arg)%b)%b)%b)%b]%n[m%Lake-proc2%n(l%Lambda (proc)%n(l%Lambda (arg1 arg2)%n(c%Lond%n[(eq? arg1 'ALL) 'ALL]%n[(eq? arg2 'ALL) 'ALL]%n[else (proc arg1 arg2)]%b)%b)%b)%b]%b)%n(define car_1 (make-proc1 car))%n(define cdr_1 (make-proc1 cdr))%n(define eq?_1 (make-proc2 eq?))%n(define +_1 (make-proc2 +))%n(define -_1 (make-proc2 -))%n(define null?_1 (make-proc1 null?))%n(d%Lefine lub_1%n(l%Lambda (x y)%n(c%Lond%n[(and (eq? x y) (null? x)) x]%n[(or (eq? x 'ALL) (eq? y 'ALL) (atom? x) (atom? y)) 'ALL]%n[else (c%Lons (lub_1 (car x) (car y))%n(lub_1 (cdr x) (cdr y))%b)]%b)%b)%b)%n(d%Lefine length_1%n(l%Lambda (n)%n(i%Lf (= n 0)%n\'()%n(cons 'ALL (length_1 (- n 1)))%b)%b)%b)%n"
+
+#define SCHEME_MIDDLE "%n%n(l%Lambda args%n"
+
+/*
+ * 
+ */
+
+view SchemeView;
+
+program: Prog[SchemeView @ ::= SCHEME_HEADER  @ SCHEME_MIDDLE .. @ "))))%b%b"] ;
+
+funDef: FunDefinition [SchemeView @ ::= "%n%n(d%Lefine " @
+		     			"%n(l%Lambda (%[%L" @ "%b%])%n" @ "%b))"] ;
+
+#define ONEARGFUN(f,str) f[SchemeView @ ::= "(%[" str @ "%b%])"]
+#define TWOARGFUN(f,str) f[SchemeView @ ::= "(%[" str @ "%c " @ "%b%])"]
+
+exp: 
+     ONEARGFUN(Not,"n%Lot ")
+   | TWOARGFUN(And,"a%Lnd ")
+   | TWOARGFUN(Or,"o%Lr ")
+   | TWOARGFUN(Equal,"=%L ")
+   | TWOARGFUN(NotEqual,"!%L= ")
+   | ONEARGFUN(Neg,"-%L ")
+   | TWOARGFUN(Sum,"+%L ")
+   | TWOARGFUN(Diff,"-%L ")
+   | TWOARGFUN(Prod,"*%L ")
+   | TWOARGFUN(Quot,"/%L ")
+   | TWOARGFUN(Less,"<%L ")
+   | TWOARGFUN(LessEqual,"<%L= ")
+   | TWOARGFUN(Greater,">%L ")
+   | TWOARGFUN(GreaterEqual,">%L= ")
+   | ONEARGFUN(ListNull,"n%Lull? ")
+   | ONEARGFUN(ListAtom,"a%Ltom? ")
+   | ONEARGFUN(ListCar,"c%Lar ")
+   | ONEARGFUN(ListCdr,"c%Ldr ")
+   | TWOARGFUN(ListCons,"c%Lons ")
+   | TWOARGFUN(ListEq,"e%Lq? ")
+   | ListNil[SchemeView @ ::= "'()"]
+   | BoolOp {local STR str;str= BOOL?"#t":"#f";}[SchemeView @ ::= str ..]
+   | FunCall[SchemeView @ ::= "(%[%L" @ " %c" @ "%b%])"] 
+   | If[SchemeView @ ::= "(if %[%L" @ " %c" @ " %c" @ "%b%])"]
+   | Let[SchemeView @::= "(l%[%Let ((" @ " %o%[%L%t" @ "%b%b%]))%n" @ "%b%])"]
+   ;
+
+expList: ExpList2[SchemeView ^ ::= ^ [" %c"] @ ] ;
+
+idList:  IdList2[SchemeView ^ ::= "%c" ^ [" %c"] @ ] ;
+
+
+#undef ONEARGFUN
+#undef TWOARGFUN
