@@ -1,0 +1,182 @@
+A#S#C#S#S#L#V#3
+$operators 
+Prog 3 0 0
+FunDefs2 2 0 0
+FunDefinition 3 0 0
+Ident 1 0 0
+_Str 0 0 1
+IdList2 2 0 0
+IdList0 0 0 0
+If 3 7 0
+ListNull 1 5 0
+VarId 1 5 0
+ListNil 0 5 0
+FunCall 2 5 0
+ExpList2 2 4 0
+ListCar 1 5 0
+ExpList0 0 4 0
+ListCdr 1 5 0
+ListCons 2 5 0
+BoolOp 1 6 0
+_Bool 0 0 1
+ListEq 2 5 0
+FunDefs0 0 0 0
+ConDesSetPair 2 0 0
+ConDestructors 3 0 0
+IdNull 0 0 0
+Destructor2 2 0 0
+Destructor0 0 0 0
+ConDesSetIsEmpty 0 0 0
+$object 
+121 19
+0
+1
+2
+3
+4
++5 union
+5
+3
+4
++2 l1
+5
+3
+4
++2 l2
+6
+7
+8
+9
+4
++2 l1
+10
+7
+11
+3
+4
++7 member?
+12
+13
+9
+4
+<
+12
+9
+4
++2 l2
+14
+11
+3
+4
++5 union
+12
+15
+9
+4
+>
+12
+9
+4
+<
+14
+16
+13
+9
+4
+>
+11
+3
+4
++5 union
+12
+15
+9
+4
+?
+12
+9
+4
+=
+14
+1
+2
+3
+4
++7 member?
+5
+3
+4
++1 a
+5
+3
+4
++1 l
+6
+7
+8
+9
+4
++1 l
+17
+18
+1 F
+7
+19
+13
+9
+4
+;
+9
+4
++1 a
+17
+18
+1 T
+11
+3
+4
++7 member?
+12
+9
+4
+<
+12
+15
+9
+4
+=
+14
+20
+21
+22
+23
+23
+24
+23
+25
+26
+11
+3
+4
++10 time_union
+12
+11
+3
+4
++8 length_1
+12
+9
+4
++1 n
+14
+12
+11
+3
+4
++8 length_1
+12
+9
+4
++1 m
+14
+14
