@@ -1,0 +1,106 @@
+/*****************************************************************************
+ * Abstract syntax for expression $exp$ with $IntOp,Neg,Sum,Less$ etc.
+ *****************************************************************************/
+exp	:	IntOp(INT)
+	|	Neg(exp)
+	|	Sum, Diff, Prod, Quot(exp exp)
+	|	Less, LessEqual, Greater, GreaterEqual(exp exp)
+	;
+
+/*****************************************************************************
+ * Minimal parenthesization
+ *****************************************************************************/
+exp	:	Neg		PP1(10)
+	|	Sum, Diff	PP2(6)
+	|	Prod, Quot	PP2(8)
+	|	Less, LessEqual, Greater, GreaterEqual	PP2(5)
+	;
+
+/*****************************************************************************
+ * Attribution rules for expression $exp$ with $IntOp,Neg,Sum,Less$ etc.
+ *****************************************************************************/
+exp	:	IntOp {	exp.idCollect = IdList0(); }
+	|	Neg {	exp$2.funEnv = exp$1.funEnv;
+			exp$2.conEnv = exp$1.conEnv;
+
+			exp$1.idCollect = exp$2.idCollect;
+			exp$2.idEnv = exp$1.idEnv; }
+	|	Sum, Diff, Prod, Quot, 
+		Less, LessEqual, Greater, GreaterEqual {
+			exp$2.funEnv = exp$1.funEnv;
+			exp$3.funEnv = exp$1.funEnv; 
+			exp$2.conEnv = exp$1.conEnv;
+			exp$3.conEnv = exp$1.conEnv; 
+
+			exp$1.idCollect = 
+				unionIdList(exp$2.idCollect,exp$3.idCollect);
+			exp$2.idEnv = exp$1.idEnv;
+			exp$3.idEnv = exp$1.idEnv; }
+	;
+
+/*****************************************************************************
+ * Concrete input syntax for expression $exp$ with $IntOp,Neg,Sum,Less etc.
+ *****************************************************************************/
+Exp	::=	(INTEGER)	{ Exp$1.abs = let n=STRtoINT(INTEGER)
+				              in( (n>=0)? IntOp(n) 
+						  : Neg(IntOp(-n))); }
+	|	('~' Exp)	{ Exp$1.abs = Neg(Exp$2.abs); } 
+	|	(Exp '+' Exp)	{ Exp$1.abs = Sum( Exp$2.abs,Exp$3.abs); }
+	|	(Exp '-' Exp)	{ Exp$1.abs = Diff(Exp$2.abs,Exp$3.abs); }
+	|	(Exp '*' Exp)	{ Exp$1.abs = Prod(Exp$2.abs,Exp$3.abs); }
+	|	(Exp '/' Exp)	{ Exp$1.abs = Quot(Exp$2.abs,Exp$3.abs); }
+	|	(Exp '<' Exp)	{ Exp$1.abs = Less(Exp$2.abs,Exp$3.abs); }
+	|	(Exp LESSEQUAL Exp prec LESSEQUAL)
+				{ Exp$1.abs = LessEqual(Exp$2.abs,Exp$3.abs); }
+	|	(Exp '>' Exp)	{ Exp$1.abs = Greater(Exp$2.abs,Exp$3.abs); }
+	|	(Exp GREATEREQUAL Exp prec GREATEREQUAL)
+			{ Exp$1.abs = GreaterEqual(Exp$2.abs,Exp$3.abs);}
+	;
+
+/*****************************************************************************
+ * Unparsing for expression $exp$ with $IntOp,Neg,Sum,Less etc.
+ *****************************************************************************/
+exp	:	IntOp		[ ^ ::= ^ ]
+	|	Neg		[ ^ ::= PT(lp) OP(~) @ PT(rp)]
+	|	Sum		[ ^ ::= PT(lp) @ OP2(+) @ PT(rp)]
+	|	Diff		[ ^ ::= PT(lp) @ OP2(-) @ PT(rp)]
+	|	Prod		[ ^ ::= PT(lp) @ OP2(*) @ PT(rp)]
+	|	Quot		[ ^ ::= PT(lp) @ OP2(/) @ PT(rp)]
+	|	Less	 	[ ^ ::= PT(lp) @ OP2(<) @ PT(rp)]
+	|	LessEqual	[ ^ ::= PT(lp) @ OP2(<=) @ PT(rp)]
+	|	Greater		[ ^ ::= PT(lp) @ OP2(>) @ PT(rp)]
+	|	GreaterEqual	[ ^ ::= PT(lp) @ OP2(>=) @ PT(rp)]
+	;
+
+/*****************************************************************************
+ * Template commands for expression $exp$ with $IntOp,Neg,Sum,Less etc.
+ *****************************************************************************/
+transform exp
+	on "neg" <exp> : Neg(<exp>),
+	on "sum" <exp> : Sum(<exp>, <exp>),
+	on "diff" <exp> : Diff(<exp>, <exp>),
+	on "prod" <exp> : Prod(<exp>, <exp>),
+	on "quot" <exp> : Quot(<exp>, <exp>),
+	on "less" <exp> : Less(<exp>, <exp>),
+	on "lessEqual" <exp> : LessEqual(<exp>, <exp>),
+	on "greater" <exp> : Greater(<exp>, <exp>),
+	on "greaterEqual" <exp> : GreaterEqual(<exp>, <exp>),
+	on "commute" Sum(a, b) : Sum(b, a),
+	on "commute" Prod(a, b) : Prod(b, a),
+	on "commute" Less(a, b) : Greater(b, a),
+	on "commute" LessEqual(a, b) : GreaterEqual(b, a),
+	on "commute" Greater(a, b) : Less(b, a),
+	on "commute" GreaterEqual(a, b) : LessEqual(b, a),
+	on "associate" Sum(Sum(a,b),c): Sum(a,Sum(b,c)),
+	on "associate" Sum(a,Sum(b,c)): Sum(Sum(a,b),c),
+	on "associate" Diff(Sum(a,b),c): Sum(a,Diff(b,c)),
+	on "associate" Sum(a,Diff(b,c)): Diff(Sum(a,b),c),
+	on "associate" Prod(Prod(a,b),c): Prod(a,Prod(b,c)),
+	on "associate" Prod(a,Prod(b,c)): Prod(Prod(a,b),c),
+	on "distribute" Prod(Sum(a,b),c): Sum(Prod(a,c),Prod(b,c)),
+	on "distribute" Prod(c,Sum(a,b)): Sum(Prod(c,a),Prod(c,b)),
+	on "distribute" Prod(Diff(a,b),c): Diff(Prod(a,c),Prod(b,c)),
+	on "distribute" Prod(c,Diff(a,b)): Diff(Prod(c,a),Prod(c,b)),
+	on "distribute" Quot(Sum(a,b),c): Sum(Quot(a,c),Quot(b,c)),
+	on "distribute" Quot(Diff(a,b),c): Diff(Quot(a,c),Quot(b,c))
+	;
