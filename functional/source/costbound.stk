@@ -1,0 +1,61 @@
+(define car^ (lambda (x) (if (pair? x) (car x) #f)))
+(define cdr^ (lambda (x) (if (pair? x) (cdr x) #f)))
+
+(define program->first-function
+  (lambda (pgm)
+    (car^ (cdr^ (car^ (cdr^ pgm))))))
+
+(define function->name
+  (lambda (fun)
+    (car^ (cdr^ (car^ (cdr^ fun))))))
+
+(define function->args-length
+  (lambda (fun)
+    (do ([arg2 fun (car^ (cdr^ (cdr^ arg2)))]
+	 [n -2 (+ n 1)])
+      ([not (pair? arg2)] n))))
+
+(define scheme_save
+  (lambda (sg:program)
+    (let ([fun (program->first-function (sg:explode* sg:program))])
+      (let ([name (function->name fun)]
+	    [args-length (function->args-length fun)])
+	(if (string? name)
+	  (let ([name (string-append name ".ss")])
+	    (set! args-size args-length)
+	    (set! filename name)
+	    (sg:save-as "Text" name "SchemeView")
+	    (sg:make-dialog "run-stats" "input sizes" "sizes")))
+	sg:program))))
+
+(define scheme_save
+  (lambda (sg:program)
+    sg:program))
+
+(define scheme_stats
+  (lambda (sg:program)
+    (let ([fun (program->first-function (sg:explode* sg:program))])
+      (let ([name (function->name fun)]
+	    [args-length (function->args-length fun)])
+	(if (string? name)
+	  (let ([file (string-append name ".ss")])
+	    (set! args-size args-length)
+	    (set! filename file)
+	    (sg:save-as "Text" filename "SchemeView")
+	    (sg:make-dialog "run-stats" "input sizes" "sizes")))
+	sg:program))))
+
+(define args-size 1)
+(define filename "/dev/null")
+
+(define run-stats
+  (lambda (sizes)
+    (sg:shell-command
+      (format #f "xterm -T Timing -e ./timer ~a ~a ~a"
+	filename args-size sizes))
+    (sg:set-window! "*shell*")
+    '(let ([start (sg:text-scan 0 "read" "forward" #t)])
+      (if (>= start 0)
+	(sg:text-replace! 0 (+ start 5) "")))
+    '(sg:close)
+    #t))
