@@ -1,0 +1,21 @@
+/**
+ *    Utilities
+ **/
+
+
+idList get_fun_names(funDefs fl) {
+  with (fl) (
+    FunDefs0() : IdList0(),
+    FunDefs2(f,fl):
+      with (f) (
+	VoidFunDef(): get_fun_names(fl),
+	FunDefinition(name, args, body): IdList2(name, get_fun_names(fl))
+      )
+    )
+  };
+
+
+ID my_gensym(STR old_name,  STR prefix, idList l) {
+  let ID = prefix#old_name in
+    (inIdList(Ident(ID),l) ? my_gensym(ID,prefix,l) : ID)
+  };
