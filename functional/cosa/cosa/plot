@@ -1,0 +1,7 @@
+plot "plot.estm.isort" with linespoints , "plot.real.isort" with linespoints
+plot "plot.estm.msort" with linespoints , "plot.real.msort" with linespoints    
+plot "plot.estm.nrev"  with linespoints , "plot.real.nrev"  with linespoints 
+plot "plot.estm.prod"  with linespoints , "plot.real.prod"  with linespoints 
+plot "plot.estm.ssort" with linespoints , "plot.real.ssort" with linespoints
+plot "plot.estm.rev"   with linespoints , "plot.real.rev"   with linespoints 
+plot "plot.estm.union" with linespoints , "plot.real.union" with linespoints 
