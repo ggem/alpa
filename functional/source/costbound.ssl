@@ -1,0 +1,116 @@
+/**
+ *    Cost Bound transformation
+ **/
+
+program costbound(program p) {
+  with (p) (
+    Prog(fundefs, condesset, e):
+      Prog(costbound_fundefs(fundefs), condesset, e)
+    )
+  };
+
+funDefs costbound_fundefs(funDefs fl) {
+  with (fl) (
+    FunDefs0() : fl,
+    FunDefs2(tf,FunDefs2(f,fl)): 
+      FunDefs2(costbound_tau_fundef(tf),
+	       FunDefs2(costbound_sigma_fundef(f),
+			costbound_fundefs(fl))),
+    FunDefs2(f,l): fl
+    )
+  };
+
+funDef costbound_tau_fundef(funDef f) {
+  with (f) (
+    VoidFunDef(): f,
+    FunDefinition(name, args, body):
+      FunDefinition(name, args, costbound_tau_exp(body))
+    )
+  };
+
+funDef costbound_sigma_fundef(funDef f) {
+  with (f) (
+    VoidFunDef(): f,
+    FunDefinition(name, args, body):
+      FunDefinition(name, args, costbound_sigma_exp(body))
+    )
+  };
+
+expList costbound_tau_exps(expList l) {
+  with (l) (
+    ExpList0(): l,
+    ExpList2(x,l2): ExpList2(costbound_tau_exp(x),costbound_tau_exps(l2)),
+    )
+  };
+
+expList costbound_sigma_exps(expList l) {
+  with (l) (
+    ExpList0(): l,
+    ExpList2(x,l2): ExpList2(costbound_sigma_exp(x),costbound_sigma_exps(l2)),
+    )
+  };
+
+exp costbound_tau_exp(exp x) {
+  with (x) (
+    Sum(x2,x3): Sum(costbound_tau_exp(x2),costbound_tau_exp(x3)),
+    FunCall(name, args): FunCall(name, costbound_tau_exps(args)),
+    If(x2,x3,x4): Let(Ident("x:1"),costbound_sigma_exp(x2),
+		      If(ListEq(VarId("x:1"),VarId("'UNKNOWN")),
+			 FunCall(Ident("max"),costbound_tau_exp(x3) ::
+				 costbound_tau_exp(x4) :: ExpList0),
+			 If(VarId("x:1"),
+			    costbound_tau_exp(x3),
+			    costbound_tau_exp(x4)))),
+    Let(var,x2,x3): Let(var,costbound_sigma_exp(x2),costbound_tau_exp(x3)),
+    y: x,    
+    )
+  };
+
+
+#define CB_ONEARG(op,newname) \
+	op(x2): FunCall(Ident(newname),costbound_sigma_exp(x2)::ExpList0)
+#define CB_TWOARG(op,newname) \
+	op(x2,x3): FunCall(Ident(newname),	\
+			   costbound_sigma_exp(x2)::	\
+			   costbound_sigma_exp(x3)::ExpList0)
+
+exp costbound_sigma_exp(exp x) {
+  with (x) (
+    CB_ONEARG(Not,"not_1"),
+    CB_ONEARG(Neg,"neg_1"),
+    CB_ONEARG(ListNull,"null?_1"),
+    CB_TWOARG(Sum,"+_1"),
+    CB_TWOARG(Diff,"-_1"),
+    CB_TWOARG(Quot,"/_1"),
+    CB_TWOARG(Less,"<_1"),
+    CB_TWOARG(LessEqual,"<=_1"),
+    CB_TWOARG(Greater,">_1"),
+    CB_TWOARG(GreaterEqual,">=_1"),
+    CB_TWOARG(And,"and_1"),
+    CB_TWOARG(Or,"or_1"),
+    CB_TWOARG(Equal,"=_1"),
+    CB_TWOARG(NotEqual,"!=_1"),
+    CB_TWOARG(ListEq,"eq?_1"),
+    CB_ONEARG(ListCar,"car_1"),
+    CB_ONEARG(ListCdr,"cdr_1"),
+
+    ListCons(x2,x3): ListCons(costbound_sigma_exp(x2),costbound_sigma_exp(x3)),
+    FunCall(name, args): FunCall(name, costbound_sigma_exps(args)),
+
+    If(x2,x3,x4):
+      Let(Ident("x:1"),costbound_sigma_exp(x2),
+	  If(ListEq(VarId("x:1"),VarId("'UNKNOWN")),
+	     FunCall(Ident("lub_1"),costbound_sigma_exp(x3) ::
+		     costbound_sigma_exp(x4) :: ExpList0),
+	     If(VarId("x:1"),
+		costbound_sigma_exp(x3),
+		costbound_sigma_exp(x4)))),
+
+    Let(var,x2,x3): Let(var,costbound_sigma_exp(x2),costbound_sigma_exp(x3)),
+    y: x,
+    )
+
+  };
+
+#undef CB_ONEARG
+#undef CB_TWOARG
