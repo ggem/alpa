@@ -1,0 +1,39 @@
+/*****************************************************************************
+ * Abstract syntax for identifier $id$ and $idList$
+ *****************************************************************************/
+id	:	IdNull()
+	|	Ident(ID)
+	;
+list idList;
+idList	:	IdList0()
+	|	IdList2(id idList)
+	;
+
+/*****************************************************************************
+ * Concrete input syntax for identifier $id$ and $idList$
+ *****************************************************************************/
+Id	{ synthesized id abs; };
+IdList	{ synthesized idList abs; };
+
+id	~ Id.abs;
+idList	~ IdList.abs;
+
+Id	::=	(ID)		{ Id.abs = Ident(ID); }
+	|	(IDENT_PLACEHOLDER)
+				{ Id.abs = IdNull; }
+	;
+IdList	::=	()		{ IdList.abs = IdList0; }
+	|	(Id)		{ IdList.abs = Id.abs :: IdList0; }
+	|	(Id ',' IdList)	{ IdList$1.abs = (Id.abs :: IdList$2.abs); }
+	;
+
+/*****************************************************************************
+ * Unparsing for identifier $id$ and $idList$
+ *****************************************************************************/
+id	:	IdNull		[ ^ ::= PH(ident) ]
+	|	Ident		[ ^ ::= ^ ]
+	;
+list idList;
+idList	:	IdList0		[ ^ ::= "" ]
+	|	IdList2		[ ^ ::= ^ [", %c"] @ ]
+	;
