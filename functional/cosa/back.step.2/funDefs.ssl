@@ -1,0 +1,61 @@
+/*****************************************************************************
+ * Abstract syntax for function definition $funDef$ and $funDefs$ 
+ *****************************************************************************/
+funDef	:	VoidFunDef( )
+	|	FunDefinition( id idList exp )
+	;
+list funDefs;
+funDefs	:	FunDefs0( )
+	|	FunDefs2( funDef funDefs )
+	;
+
+/******************************************************************************
+ * Minimal parenthesization, useless
+ *****************************************************************************/
+funDef	:	FunDefinition {	exp.precedence = 0; }
+	;
+
+/*****************************************************************************
+ * Attribution rules, useless
+ *****************************************************************************/
+funDef	:	FunDefinition { exp.funEnv = FunDefs0();
+				exp.conEnv = ConDesSetIsEmpty();
+
+				exp.idEnv = IdList0(); }
+	;
+
+/*****************************************************************************
+ * Concret input syntax for function definition $funDef$ and $funDefs$ 
+ *****************************************************************************/
+FunDef	{ synthesized funDef abs; };
+FunDefs	{ synthesized funDefs abs; };
+
+funDef	~ FunDef.abs;
+funDefs	~ FunDefs.abs;
+
+FunDef	::=	(Id '(' IdList ')' '=' Exp)
+			{ FunDef.abs = 
+				FunDefinition(Id.abs,IdList.abs, Exp.abs); }
+	;
+FunDefs	::=	(FunDef ';')
+			{ FunDefs.abs = FunDef.abs :: FunDefs0; }
+	|	(FunDef ';' FunDefs)
+			{ FunDefs$1.abs = FunDef.abs :: FunDefs$2.abs; }
+	;
+
+/*****************************************************************************
+ * Unparsing for function definition $funDef$ and $funDefs$ 
+ *****************************************************************************/
+funDef	:	VoidFunDef	[ ^ ::= PH(funDef) "%n" ]
+	|	FunDefinition	[ ^ ::= @ "(%[%L" @ "%b%]) = %[%n" @ ";%]%n" ]
+	;
+funDefs	:	FunDefs0	[ ^ ::= ]
+	|	FunDefs2	[ @ : ^ ["%n"] @ ]
+	;
+
+/*****************************************************************************
+ * Template commands for function definition $funDef$ and $funDefs$
+ *****************************************************************************/
+transform funDef
+	on "funDef" <funDef> : FunDefinition(<id>,<idList>,<exp>)
+	;
