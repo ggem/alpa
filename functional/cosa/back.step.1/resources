@@ -1,0 +1,10 @@
+timebound.styleDefinition: \
+Text : cour; \n\
+largest : times,12, +bold; \n\
+new-text-buffers : <*,gray95,*,*> ; \n\
+old-text-buffers : <*,gray95,*,*> ; \n\
+new-characters : cour, +bold <royalblue1,gray75,*,*> ; \n\
+text-buffers-other-view : helvetica, <palevioletred4,*,*,*> ; \n\
+HiliteExp : <red,*,*,*>; \n\
+HiliteId : +bold <red2,*,*,*>; \n\
+default: times, 12, <blue3,*,blue3,wheat>;
