@@ -1,0 +1,14 @@
+set title "selectsort"
+set xlabel "input size"
+set ylabel "time (milliseconds)"
+set data style linespoints
+set size 0.7,0.7
+set terminal postscript eps
+set output "selectsort-0.eps"
+plot [0:2000]  "piano:computed" t "Ultra 10 computed" ,  "piano:measured" t "Ultra 10 measured" 
+set output "selectsort-1.eps"
+plot [0:60]  "piano:computed" t "Ultra 10 computed" ,  "piano:measured" t "Ultra 10 measured" 
+set output "selectsort-2.eps"
+plot [40:220]  "piano:computed" t "Ultra 10 computed" ,  "piano:measured" t "Ultra 10 measured" 
+set output "selectsort-3.eps"
+plot [400:2200]  "piano:computed" t "Ultra 10 computed" ,  "piano:measured" t "Ultra 10 measured" 
