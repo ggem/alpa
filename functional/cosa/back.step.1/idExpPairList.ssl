@@ -1,0 +1,101 @@
+/*****************************************************************************
+ * Abstract syntax for list of identifier and expression pairs $idExpPairList$.
+ * Used mainly in matching and substitution.
+ *****************************************************************************/
+list idExpPairList;
+idExpPairList
+	:	IdExpPairList0 ()
+	|	IdExpPairList2 (idExpPair idExpPairList)
+	;
+idExpPair
+	:	VoidIdExpPair ()
+	|	IdExpPair ( id exp )
+	;
+idExpPair
+	:	IdExpPair { exp.precedence = 0;
+			    exp.funEnv = FunDefs0(); 
+			    exp.conEnv = ConDesSetIsEmpty(); 
+			    exp.idEnv = IdList0(); };
+
+/*****************************************************************************
+ * form $idExpPairList$ from $idList$ and $expList$
+ *****************************************************************************/
+idExpPairList formIdExpPairList(idList il, expList el) {
+    with (il) (
+	IdList0: IdExpPairList0,
+	IdList2(i1,il1):
+	    with (el) (
+		ExpList0: IdExpPairList0,
+		/* error: mismatch between formal and actual argument No */
+		ExpList2(e1,el1):
+		    IdExpPairList2(IdExpPair(i1,e1),formIdExpPairList(il1,el1))
+		)
+	)
+    };
+
+/*****************************************************************************
+ * auxiliary functions on $idExpPairList$
+ *****************************************************************************/
+BOOL inIdExpPairList(idExpPair p, idExpPairList l) {
+    with (l) (
+	IdExpPairList0: false,
+	IdExpPairList2(e1,l1): (p==e1) ? true : inIdExpPairList(p,l1)
+	)
+    };
+
+BOOL subsetIdExpPairList(idExpPairList l1, idExpPairList l2) {
+    with (l1) (
+	IdExpPairList0: true,
+	IdExpPairList2(e1,l11): 
+	    (inIdExpPairList(e1,l2)) ? subsetIdExpPairList(l11,l2) : false
+	)
+    };
+
+/*****************************************************************************
+ * $assocExpForId$ takes an id $i$, an idExpPairList $m$,
+ *  returns 1st exp corresponding to $i$ in $m$, or $VoidExp$ if not found.
+ * $assocExpListForIdList$ takes a list of ids $l$, an idExpPairList $m$,
+ *  returns the expression list corresponding to each id in $l$.
+ *****************************************************************************/
+exp assocExpForId(id i, idExpPairList m) {
+    with (m) (
+	IdExpPairList0: VoidExp,
+	IdExpPairList2(VoidIdExpPair, m1): assocExpForId(i, m1),
+	IdExpPairList2(IdExpPair(i1,e), m1): 
+	    (i==i1) ? e : assocExpForId(i, m1)
+	)
+    };
+
+expList assocExpListForIdList(idList l, idExpPairList m) {
+    with (l) (
+	IdList0: ExpList0,
+	IdList2(i,l1): ExpList2(assocExpForId(i,m),assocExpListForIdList(l1,m))
+	)
+    };
+
+/*****************************************************************************
+ * $assocIdForExp$ takes an exp $e$, an idExpPairList $m$,
+ *  returns 1st id corresponding to $e$ in $m$, or $VoidId$ if not found.
+ *****************************************************************************/
+id assocIdForExp(exp e, idExpPairList m) {
+    with (m) (
+	IdExpPairList0: IdNull,
+	IdExpPairList2(VoidIdExpPair, m1): assocIdForExp(e, m1),
+	IdExpPairList2(IdExpPair(i,e1), m1): 
+	    (e==e1) ? i : assocIdForExp(e, m1) /*ANNIE: test using eqExp*/
+	)
+    };
+
+/*****************************************************************************
+ * $newAssoc$ takes an idExpPairList $m$, an identifier $i$, an expression $e$,
+ *  changes binding of $i$ to be with $e$ if an old one exists, adds this o.w.
+ *****************************************************************************/
+idExpPairList newAssoc(idExpPairList m, id i, exp e) {
+    with (m) (
+	IdExpPairList0: IdExpPairList2(IdExpPair(i,e),IdExpPairList0),
+	IdExpPairList2(VoidIdExpPair, m1): newAssoc(m1,i,e),
+	IdExpPairList2(IdExpPair(i1,e1),m1):
+	    ( i==i1 ) ? IdExpPairList2(IdExpPair(i1,e),m1) 
+		      : IdExpPairList2(IdExpPair(i1,e1),newAssoc(m1,i,e))
+	)
+    };
