@@ -1,0 +1,60 @@
+/*
+ * Abstract syntax for programs
+ */
+
+root defList;
+list defList;
+defList	:	DefList0()
+	|	DefList2(define defList)
+	;
+
+define	:	VoidDefine()
+	|	Def(ID exp)
+	;
+
+
+
+/*
+ * Abstract syntax for expression
+ */
+
+exp	:	VoidExp()
+	|	Constant(CONSTANT)
+	|	Quote(exp)
+	|	VarRef(ID)
+	|	Lambda(idList exp)
+	|	App(exp expList)
+	|	If(exp exp exp)
+	|	Let(bindings exp)
+	|	LetRec(bindings exp)
+	|	SetBang(ID exp)
+	|	Begin(exp exp)
+	|	PrimApp(ID expList)
+	|	HalfCPS(ID exp exp)
+	|	Hilite(exp)
+	;
+
+list expList;
+expList	:	ExpList0()
+	|	ExpList2(exp expList)
+	;
+
+
+
+/*
+ * Abstract syntax for bindings
+ */
+
+list bindings;
+bindings:	BindList0()
+	|	BindList2(binding bindings)
+	;
+
+binding	:	VoidBinding()
+	|	Bind(ID exp)
+	;
+
+list idList;
+idList	:	IdList0()
+	|	IdList2(ID idList)
+	;
