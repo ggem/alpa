@@ -1,0 +1,58 @@
+/*****************************************************************************
+ * see if function with name $funName$ is defined in function defintions $fds$
+ *****************************************************************************/
+BOOL defined(id funName, funDefs fds) {
+    with (fds) (
+	FunDefs0: false,
+	FunDefs2(VoidFunDef,fds1): false,
+	FunDefs2(FunDefinition(i,l,e),fds1):
+	    funName==i ? true : defined(funName,fds1),
+	)
+    };
+
+/*****************************************************************************
+ * $unfold$ function with name $funName$ and parameters $ps$ in funDefs $fds$.
+ * $il$ is the list of used identifiers.
+ *****************************************************************************/
+exp unfold(id funName, expList ps, funDefs fds, idList il) {
+    with (fds) (
+	FunDefs0: VoidExp,
+	FunDefs2(VoidFunDef,fds1): unfold(funName,ps,fds1,il),
+	FunDefs2(FunDefinition(id1,idList1,exp1),fds1):
+	    funName==id1 
+	    ? multiStExp(exp1,formIdExpPairList(idList1,ps),il)
+	    : unfold(funName,ps,fds1,il),
+	)
+    };
+
+/*****************************************************************************
+ * fold the expression $e$ in the function defintion env $fds$
+ *****************************************************************************/
+exp foldInFunDefs(exp e, funDefs fds) {
+    with (fds) (
+	FunDefs0: e,
+	FunDefs2(VoidFunDef,fds1): foldInFunDefs(e,fds1),
+	FunDefs2(FunDefinition(f,args,e1),fds1):
+	    let m=matchExp(e1,e)
+	    in( m!=IdExpPairList2(VoidIdExpPair,IdExpPairList0)  
+		? FunCall(f,assocExpListForIdList(args,m))
+		: foldInFunDefs(e,fds1) )
+	)
+    };
+
+/*****************************************************************************
+ * $unfoldableFun$ tests whether a function application is unfoldable,
+ * i.e., if all argus are vars or each occurs at most once on all path in def,
+ * and the function is not in a recursive path.
+ *****************************************************************************/
+/*
+BOOL unfoldableFun(id f, expList ps, funDefs fds, defSet ds) {
+    with (ps) 
+  }
+
+BOOL inRec(id f, funDefs fds, defSet ds) {
+  
+
+  }
+
+*/
