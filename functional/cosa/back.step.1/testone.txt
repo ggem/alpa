@@ -1,0 +1,233 @@
+FUNCTION DEFINITIONS:
+fc(x) =
+  0;
+
+fv1(x) =
+  x;
+
+fv2(x, y) =
+  y;
+
+fp1(x, y) =
+  x + y;
+
+fp2(x, y) =
+  x * x;
+
+fp3(x, y, z) =
+  (z - y) / y;
+
+fi1(x) =
+  if x <= 0 then
+    0
+  else
+    x;
+
+fi2(x, y) =
+  if x <= 0 then
+    0
+  else
+    x;
+
+fi3(x, y) =
+  if x <= 0 then
+    y
+  else
+    x;
+
+fi4(x, y) =
+  if y <= 0 then
+    0
+  else
+    1;
+
+fi5(x, y) =
+  if 3 <= 0 then
+    0
+  else
+    1;
+
+fl1(x) =
+  let v = 3
+  in
+    0
+  end;
+
+fl2(x) =
+  let v = x
+  in
+    0
+  end;
+
+fl3(x) =
+  let v = 3
+  in
+    x
+  end;
+
+fl4(x) =
+  let v = 3
+  in
+    v
+  end;
+
+fl5(x) =
+  let v = x
+  in
+    v
+  end;
+
+fl6(x) =
+  let x = 3
+  in
+    x
+  end;
+
+fl7(x) =
+  let x = x
+  in
+    0
+  end;
+
+fl8(x) =
+  let x = x
+  in
+    x
+  end;
+
+fl9(x) =
+  let v = x
+  in
+    x + x - 1
+  end;
+
+fl10(x) =
+  let v = x + 1
+  in
+    x * v
+  end;
+
+fl11(x, y) =
+  let v = x + 1
+  in
+    0
+  end;
+
+fl12(x, y) =
+  let v = x + 1
+  in
+    y
+  end;
+
+fl13(x, y) =
+  let x = y / 5
+  in
+    0
+  end;
+
+fl14(x, y) =
+  let x = y / 5
+  in
+    x
+  end;
+
+fl15(x, y) =
+  let x = y + x
+  in
+    x
+  end;
+
+fl16(x, y) =
+  let x = y + x
+  in
+    y
+  end;
+
+ff1(x) =
+  p(x);
+
+ff2(x, y) =
+  p(x);
+
+p(x) =
+  x;
+
+ff3(x, y) =
+  q(x, y);
+
+ff4(x, y) =
+  q(x, x);
+
+q(x, y) =
+  x;
+
+ff5(x, y) =
+  if x <= 0 then
+    x
+  else
+    ff5(x - 1, y);
+
+sort1(y, x, r) =
+  insert(y, r);
+
+insert(y, r) =
+  if y <= car(r) then
+    cons(y, r)
+  else
+    cons(car(r), insert(y, cdr(r)));
+
+sort3(i2, x1, R) =
+  if null(R) then
+    cons(i2, R)
+  else
+    let s = car(R)
+    in
+      if i2 <= s then
+        cons(i2, R)
+      else
+        cons(s, sort3(i2, rest(x1, s), cdr(R)))
+    end;
+
+rest(x, k) =
+  if k == car(x) then
+    cdr(x)
+  else
+    cons(car(x), rest(cdr(x), k));
+
+out1(C, i, a, R, r) =
+  if null(r) then
+    nil
+  else
+    cons(row1(car(C), i, a, R, car(r)), out1(cdr(C), i, a, R, cdr(r)));
+
+row1(c, i, a, R, r1) =
+  if i <= 1 then
+    cons(c * a, r1)
+  else
+    if null(r1) then
+      cons(c * a, nil)
+    else
+      cons(car(r1), row1(c, i - 1, a, cdr(R), cdr(r1)));
+
+car(x) =
+  x;
+
+cdr(x) =
+  x;
+
+cons(x, y) =
+  x + y;
+
+null(x) =
+  x;
+
+f(x, y, z, r, C, i, a, R) =
+  fc(x) + fv1(x) + fv2(x, y) + fp1(x, y) + fp2(x, y) + fp3(x, y, z) + fi1(x)
+  + fi2(x, y) + fi3(x, y) + fi4(x, y) + fi5(x, y) + fl1(x) + fl2(x) + fl3(x)
+  + fl4(x) + fl5(x) + fl6(x) + fl7(x) + fl8(x) + fl9(x) + fl10(x) + fl11(x, y)
+  + fl12(x, y) + fl13(x, y) + fl14(x, y) + fl15(x, y) + fl16(x, y) + ff1(x)
+  + ff2(x, y) + ff3(x, y) + ff4(x, y) + ff5(x, y) + sort1(y, x, r)
+  + sort3(y, x, r) + out1(C, i, a, R, r);
+
+EXPRESSION TO BE TRANSFORMED:
+f(x, y, r, C, i, a, R)
