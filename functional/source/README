@@ -1,0 +1,135 @@
+to set up your environment, include this in your .cshrc:
+
+    setenv SYNLOC /l/syn
+    setenv SG_HOME .:${SYNLOC}
+    setenv STK_LIBRARY ${SYNLOC}/sparc-sun-solaris2.5/lib/stk/3.0b2
+    setenv TCL_LOAD_PATH ${SYNLOC}/src/scripts/tcl
+    setenv PATH ${PATH}:${SYNLOC}/bin
+
+to run the program:
+
+  ./cost &
+
+There are two sample programs: t1.cb and t2.cb.  Open any of them with
+"File->Open..." or C-x C-f.  You'll see a couple of function
+definitions and at the end a "EXPRESSION TO BE TRANSFORMED:", like
+this:
+
+    FUNCTION DEFINITIONS:
+    union(l1, l2) = 
+      if null?(l1) then 
+	nil
+      else 
+	let rr = union(cdr(l1), l2)
+	in 
+	  if member?(car(l1), l2) then 
+	    rr
+	  else 
+	    cons(car(l1),rr)
+	end;
+    member?(a, l) = 
+      if null?(l) then 
+	false
+      else 
+	if eq?(car(l),a) then 
+	  true
+	else 
+	  member?(a, cdr(l));
+
+    EXPRESSION TO BE TRANSFORMED:
+    cost_union(length_1(car(args)), length_1(car(cdr(args))))
+
+The last expression will be just copied to the scheme transformed
+program like this:
+
+    (define costbound
+      (lambda args
+         <expression>))
+
+where args is going to be a list of numbers.  length_1 is the function
+that takes a number and returns a list of that size.
+
+When the cursor is at the beginning of the file, type "costbound" at
+the command prompt.  This will transform the program to its costbound
+form, like this:
+
+    FUNCTION DEFINITIONS:
+    cost_union(l1, l2) = 
+      COST_COND + (COST_NULL + COST_VARREF 
+      + (let x:1 = null?_1(l1)
+	   in 
+	     if eq?(x:1,'UNKNOWN) then 
+	       max(COST_CONSTANT, 
+		       let rr = union(cdr(l1), l2)
+		       in 
+			 COST_BINDING + (COST_FUNCALL 
+			 + (cost_union(cdr(l1), l2) + (COST_CDR 
+			 + COST_VARREF + COST_VARREF)) 
+			 + (COST_COND + (COST_FUNCALL 
+			 + (cost_member?(car(l1), l2)
+    ...
+    [program goes on and on]
+
+To save the scheme version of this program use "File->Save As..." or
+C-x C-w,  change the name to <file>.ss, change the format to Text, and
+change the View to SchemeView.
+
+My pretty-printer is not all it can be, so if you want to reformat the
+scheme program, type "./spp <file>.ss" at the unix prompt to use
+chez-scheme pretty-print to reformat the file.
+
+The following is a sample scheme session:
+
+    sleeper:% scheme t1.ss
+    Chez Scheme Version 5.0b
+    Copyright (c) 1994 Cadence Research Systems
+
+    > (costbound 0 0)
+    4
+    > (costbound 0 10)
+    4
+    > (costbound 1 0)
+    25
+    > (costbound 1 1)
+    34
+    > (costbound 1 10)
+    142
+    > (costbound 10 0)
+    214
+    > (costbound 10 1)
+    304
+    > (costbound 10 10)
+    1384
+    > (exit)
+
+The default scheme program has a cost of 1 for all the operations.
+The costs are defined in a big let at the beginning of the file:
+
+    (define costbound
+      (let ([cost_addition 1]
+	    [cost_binding 1]
+	    [cost_booleanop 1]
+	    [cost_car 1]
+	    [cost_cdr 1]
+	    [cost_cond 1]
+	    [cost_cons 1]
+	    [cost_constant 1]
+	    [cost_division 1]
+	    [cost_funcall 1]
+	    [cost_multiplication 1]
+	    [cost_negation 1]
+	    [cost_null 1]
+	    [cost_varref 1]
+	    ...
+	    <program goes on ...>
+
+
+and you would only have to change that part to do some other analyses,
+like changing everything to zero, but cons/funcall, to do space cost.
+
+
+This README file needs improvement.  Let me know what you think should
+be here, or should be explained in more detail, thanks!
+
+Gustavo Gomez.
+ggomezes@cs.indiana.edu
