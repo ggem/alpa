@@ -1,0 +1,63 @@
+/*****************************************************************************
+ * Abstract syntax for lists
+ *****************************************************************************/
+exp	:	ListCons(exp exp)
+	|	ListEq(exp exp)
+	|	ListCar(exp)
+	|	ListCdr(exp)
+	|	ListNull(exp)
+	|	ListAtom(exp)
+	|	ListNil()
+	;
+
+/*****************************************************************************
+ * Concrete input syntax for lists
+ *****************************************************************************/
+
+Exp::= (CONS '(' Exp ',' Exp ')') { Exp$1.abs=ListCons(Exp$2.abs,Exp$3.abs);}
+   |   (CAR '(' Exp ')') { Exp$1.abs = ListCar(Exp$2.abs); }
+   |   (CDR '(' Exp ')') { Exp$1.abs = ListCdr(Exp$2.abs); }
+   |   (NULL '(' Exp ')') { Exp$1.abs = ListNull(Exp$2.abs); }
+   |   (ATOM '(' Exp ')') { Exp$1.abs = ListAtom(Exp$2.abs); }
+   |   (NIL) { Exp.abs = ListNil; }
+   |   (EQ '(' Exp ',' Exp ')') { Exp$1.abs = ListEq(Exp$2.abs,Exp$3.abs);}
+   ;
+
+/*****************************************************************************
+ * Unparsing for lists
+ *****************************************************************************/
+exp : ListCons [ ^ ::= "cons(" @ "," @ ")"]
+    | ListEq   [ ^ ::= "eq?(" @ "," @ ")"]
+    | ListCar  [ ^ ::= "car(" @ ")" ]
+    | ListCdr  [ ^ ::= "cdr(" @ ")" ]
+    | ListNull [ ^ ::= "null?(" @ ")" ]
+    | ListAtom [ ^ ::= "atom?(" @ ")" ]
+    | ListNil  [ ^ ::= "nil" ]
+    ;
+
+
+/*****************************************************************************
+ * Attribution rules for expression $exp$ with lists
+ *****************************************************************************/
+
+exp : ListCons, ListEq {
+	exp$2.precedence = 0;
+	exp$3.precedence = 0;
+  	exp$2.funEnv = exp$1.funEnv;
+	exp$3.funEnv = exp$1.funEnv;
+  	exp$2.conEnv = exp$1.conEnv;
+	exp$3.conEnv = exp$1.conEnv;
+	exp$2.idEnv  = exp$1.idEnv;
+	exp$3.idEnv  = exp$1.idEnv;
+	exp$1.idCollect = unionIdList(exp$2.idCollect,exp$3.idCollect); }
+
+    | ListCar, ListCdr, ListNull, ListAtom {
+	exp$2.precedence = 0;
+  	exp$2.funEnv = exp$1.funEnv;
+  	exp$2.conEnv = exp$1.conEnv;
+	exp$2.idEnv  = exp$1.idEnv;
+	exp$1.idCollect = exp$2.idCollect; }
+    | ListNil { exp.idCollect = IdList0(); }
+    ;
+        
+
