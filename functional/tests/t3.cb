@@ -1,0 +1,134 @@
+A#S#C#S#S#L#V#3
+$operators 
+Prog 3 0 0
+FunDefs2 2 0 0
+FunDefinition 3 0 0
+Ident 1 0 0
+_Str 0 0 1
+IdList2 2 0 0
+IdList0 0 0 0
+If 3 7 0
+ListNull 1 5 0
+VarId 1 5 0
+ListNil 0 5 0
+FunCall 2 5 0
+ExpList2 2 4 0
+ListCdr 1 5 0
+ExpList0 0 4 0
+ListCons 2 5 0
+ListCar 1 5 0
+FunDefs0 0 0 0
+ConDesSetPair 2 0 0
+ConDestructors 3 0 0
+IdNull 0 0 0
+Destructor2 2 0 0
+Destructor0 0 0 0
+ConDesSetIsEmpty 0 0 0
+$object 
+87 14
+0
+1
+2
+3
+4
++3 rev
+5
+3
+4
++1 l
+6
+7
+8
+9
+4
++1 l
+10
+11
+3
+4
++6 append
+12
+11
+3
+4
++3 rev
+12
+13
+9
+4
+=
+14
+12
+15
+16
+9
+4
+=
+10
+14
+1
+2
+3
+4
++6 append
+5
+3
+4
++2 l1
+5
+3
+4
++2 l2
+6
+7
+8
+9
+4
++2 l1
+9
+4
++2 l2
+15
+16
+9
+4
+<
+11
+3
+4
++6 append
+12
+13
+9
+4
+=
+12
+9
+4
+<
+14
+17
+18
+19
+20
+20
+21
+20
+22
+23
+11
+3
+4
++8 cost_rev
+12
+11
+3
+4
++8 length_1
+12
+16
+9
+4
++4 args
+14
+14
