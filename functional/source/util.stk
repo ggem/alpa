@@ -1,0 +1,64 @@
+;;;
+;;; utilities
+;;;
+
+;;; string->symbol*! does string->symbol in all the strings in the list
+(define string->symbol*!
+  (lambda (lst)
+    (if (pair? lst)
+      (begin
+	(if (string? (car lst))
+	  (set-car! lst (string->symbol (car lst)))
+	  (string->symbol*! (car lst)))
+	(string->symbol*! (cdr lst))))))
+
+;;; symbol->string*! does symbol->string in all the strings in the list
+(define symbol->string*!
+  (lambda (lst)
+    (if (pair? lst)
+      (begin
+	(if (symbol? (car lst))
+	  (set-car! lst (symbol->string (car lst)))
+	  (symbol->string*! (car lst)))
+	(symbol->string*! (cdr lst))))))
+
+;;; copy-list! destructively copies a list
+(define copy-list!
+  (lambda (dst src)
+    (set-car! dst (car src))
+    (set-cdr! dst (cdr src))))
+
+;;; writeln
+(define writeln
+  (lambda args
+    (for-each (lambda (arg) (write arg) (display " ")) args)
+    (newline)))
+
+;;; tail-recursive for-each (procs with one argument only)
+(define for-each
+    (lambda (f lst)
+      (letrec ((for-each (lambda (lst)
+			   (if (null? (cdr lst))
+			     (f (car lst))
+			     (begin
+			       (f (car lst))
+			       (for-each (cdr lst)))))))
+	(if (not (null? lst))
+	  (for-each lst)))))
+
+;;;
+;;; set-add
+(define set-add
+  (lambda (e set)
+    (if (memq e set)
+      set
+      (cons e set))))
+
+
+;;;
+;;; make-immortal  (avoids garbage collection for a particular list
+(define make-immortal
+  (let ((immortals '()))
+    (lambda (lst)
+      (set! immortals (cons lst immortals))
+      lst)))
