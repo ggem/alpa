@@ -1,0 +1,266 @@
+/*
+ * stage 2
+ */
+
+transform exp
+  on "CPS_simple" HalfCPS(id,e,cost)
+		when (e.simple && !specialform(e)):
+		  App(VarRef(id),e::cost::ExpList0),
+  on "CPS_app" HalfCPS(id,e,cost)
+		when (let i=initial_exp(e) in (i!=e && application(i))):
+		  cps_app(id,e,initial_exp(e),cost),
+  on "CPS_special" HalfCPS(id,e,cost)
+		when (specialform(initial_exp(e))):
+		  cps_special(id,e,cost)
+  ;
+
+
+/*
+ * Capp rule.	Non simple expression, where the initial expression
+ * 		is not a special form.
+ */
+
+
+exp cps_app(ID id, exp e, exp initexp, exp cost) {
+  let v = mygensym("v",fvars(subst(e,initexp,VoidExp()))) in (
+    let ctxt = subst(e,initexp,VarRef(v)) in (
+      let cont = Lambda(IdList2(v,IdList0),HalfCPS(id,ctxt,cost)) in (
+	with (initexp) (
+	  App(rator,rands): App(rator,snocExp(rands,cont)),
+	  * : HalfCPS(id,e,cost) /* this shouldn't happen */
+	  ))))
+  };
+
+
+/*
+ * Cspecial rule.  Non simple expression, where the initial expression
+ *		   is a special form
+ */
+
+exp cps_special(ID id, exp e, exp cost) {
+  let i=initial_exp(e) in
+    (cps_special2(id,e,i,i,tail_exps(i),cost))
+  };
+
+exp cps_special2(ID id, exp e, exp answ, exp initexp, expList tailexps, exp cost) {
+  with (tailexps) (
+    ExpList0: answ,
+    ExpList2(tail1,tail2):
+      let new_e = subst(answ,tail1,HalfCPS(id,subst(e,initexp,tail1),cost)) in (
+	cps_special2(id,e,new_e,initexp,tail2,cost))
+    )
+  };
+
+
+
+
+/*
+ * subst.  Returns a new expression where old is now new.
+ */
+
+exp subst(exp e, exp old, exp new) {
+  &e == &old ?
+    new :
+    with (e) (
+      VoidExp():   e,
+      Constant(*): e,
+      Quote(*):	   e,
+      VarRef(*):   e,
+      Lambda(id,body):
+	let new_body = subst(body,old,new) in (
+	  (&body == &new_body) ? 
+	    e : 
+	    Lambda(id,new_body)),
+      App(rator,rands):
+	let new_rator = subst(rator,old,new);
+	    new_rands = substl(rands,old,new) in (
+	  (&rator == &new_rator  &&  &rands == &new_rands) ?
+	    e :
+	    App(new_rator,new_rands)),
+      If(e1,e2,e3):
+	let new_e1 = subst(e1,old,new);
+	    new_e2 = subst(e2,old,new);
+	    new_e3 = subst(e3,old,new) in (
+	  (&e1 == &new_e1  &&  &e2 == &new_e2  &&  &e3 == &new_e3) ? 
+	    e : 
+	    If(new_e1,new_e2,new_e3)),
+      Let(b,e1):
+	let new_b  = substb(b,old,new);
+	    new_e1 = subst(e1,old,new) in (
+	  (&b == &new_b  &&  &e1 == &new_e1) ?
+	    e :
+	    Let(new_b,new_e1)),
+      LetRec(b,e1):
+	let new_b  = substb(b,old,new);
+	    new_e1 = subst(e1,old,new) in (
+	  (&b == &new_b  &&  &e1 == &new_e1) ?
+	    e :
+	    LetRec(new_b,new_e1)),
+      SetBang(id,e1):
+	let new_e1 = subst(e1,old,new) in (
+	  (&e1 == &new_e1) ? e : SetBang(id,new_e1)),
+      Begin(e1,e2):
+	let new_e1 = subst(e1,old,new);
+	    new_e2 = subst(e2,old,new) in (
+	  (&e1 == &new_e1  &&  &e2 == &new_e2) ? 
+	    e :
+	    Begin(new_e1,new_e2)),
+      PrimApp(op,rands): 
+	let new_rands = substl(rands,old,new) in (
+	  (&rands == &new_rands) ? e : PrimApp(op,new_rands)),
+      HalfCPS(id,e1,cost):
+	let new_e1 = subst(e1,old,new) in (
+	  (&e1 == &new_e1) ? e : HalfCPS(id,new_e1,cost)),
+      Hilite(e1):
+	let new_e1 = subst(e1,old,new) in (
+	  (&e1 == &new_e1) ? e : Hilite(new_e1))
+      )
+  };
+
+
+expList substl(expList l, exp old, exp new) {
+  with (l) (
+    ExpList0(): l,
+    ExpList2(e,l2):
+      let new_e  = subst(e,old,new);
+	  new_l2 = substl(l2,old,new) in (
+	(&e == &new_e  &&  &l2 == &new_l2) ? 
+	  l :
+	  ExpList2(new_e,new_l2))
+    )
+  };
+
+
+bindings substb(bindings l, exp old, exp new) {
+  with (l) (
+    BindList0(): l,
+    BindList2(b,l2):
+      let new_l2 = substb(l2,old,new) in (
+        with (b) (
+	  VoidBinding(): (&l2 == &new_l2) ? l : BindList2(b,new_l2),
+	  Bind(id,e):
+	    let new_e = subst(e,old,new) in (
+	      (&e == &new_e  &&  &l2 == &new_l2) ?
+		l :
+		BindList2(Bind(id,new_e),new_l2))
+	  ))
+    )
+  };
+
+
+/*
+ *  intial_exp.  Returns first (left->right) initial expression
+ */
+
+exp initial_exp(exp e) {
+  initial_exp_hlp(e,head_exps(e))
+  };
+
+exp initial_exp_hlp(exp e, expList heads) {
+  with (heads) (
+    ExpList0(): e,
+    ExpList2(h1,h2): simple(h1) ? initial_exp_hlp(e,h2) : initial_exp(h1)
+    )
+  };
+
+expList head_exps(exp e) {
+  with (e) (
+    VoidExp():		ExpList0(),
+    Constant(c):	ExpList0(),
+    Quote(e1):		ExpList0(),
+    VarRef(id):		ExpList0(),
+    Lambda(idl,e1):	ExpList0(),
+    App(rator,rands):	ExpList2(rator,rands),
+    If(e1,e2,e3):	ExpList2(e1,ExpList0()),
+    Let(b,e1):		bind2exps(b),
+    LetRec(b,e1):	bind2exps(b),
+    SetBang(id,e1):	ExpList2(e1,ExpList0()),
+    Begin(e1,e2):	ExpList2(e1,ExpList0()),
+    PrimApp(id,args):	args,
+    HalfCPS(id,e1,cost):ExpList2(e1,ExpList0()),
+    Hilite(e1):		head_exps(e1)
+    )
+  };
+
+
+expList tail_exps(exp e) {
+  with (e) (
+    VoidExp():		ExpList0(),
+    Constant(c):	ExpList0(),
+    Quote(e1):		ExpList0(),
+    VarRef(id):		ExpList0(),
+    Lambda(idl,e1):	ExpList0(),
+    App(rator,rands):	ExpList0(),
+    If(e1,e2,e3):	ExpList2(e2,ExpList2(e3,ExpList0())),
+    Let(b,e1):		ExpList2(e1,ExpList0()),
+    LetRec(b,e1):	ExpList2(e1,ExpList0()),
+    SetBang(id,e1):	ExpList0(),
+    Begin(e1,e2):	ExpList2(e2,ExpList0()),
+    PrimApp(id,args):	ExpList0(),
+    HalfCPS(id,e1,cost):ExpList0(),
+    Hilite(e1):		tail_exps(e1)
+    )
+  };
+
+
+
+/*
+ * Is the expression a special form?
+ */
+
+BOOL specialform(exp e) {
+  with (e) (
+    If(*,*,*):	true,
+    Let(*,*):	true,
+    LetRec(*,*):true,
+    Begin(*,*):	true,
+    Hilite(e1): specialform(e1),
+    *:		false
+    )
+  };
+
+
+
+/*
+ * Is the expression an application?
+ */
+
+BOOL application(exp e) {
+  with (e) (
+    App(*,*):	true,
+    Hilite(e1):	application(e1),
+    *:		false
+    )
+  };
+
+
+
+/*
+ * is the expression simple?
+ */
+
+BOOL simple(exp e) {
+  with (e) (
+    VoidExp():		true,
+    Constant(c):	true,
+    Quote(e1):		true,
+    VarRef(id):		true,
+    Lambda(idl,e1):	true,
+    App(rator,rands):	false,
+    If(e1,e2,e3):	simple(e1) && simple(e2) && simple(e3),
+    Let(b,e1):		simples(bind2exps(b)) && simple(e1),
+    LetRec(b,e1):	simples(bind2exps(b)) && simple(e1),
+    SetBang(id,e1):	simple(e1),
+    Begin(e1,e2):	simple(e1) && simple(e2),
+    PrimApp(id,args):	simples(args),
+    HalfCPS(id,e1,cost):false,
+    Hilite(e1):		simple(e1)
+    )
+  };
+
+BOOL simples(expList l) {
+  with (l) (
+    ExpList0:		true,
+    ExpList2(e,l2):	simple(e) && simples(l2)
+    )
+  };
