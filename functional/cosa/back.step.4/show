@@ -1,0 +1,42 @@
+(define c-simple
+  (lambda (x)
+    x))
+
+(define c-simple
+  (lambda (y)
+    (+ y (* y y))))
+
+(define c-eta
+  (lambda (f)
+    (f 3)))
+
+(define c-eta
+  (lambda (f x y z)
+    (f (car x) (cdr y) (+ (* z z) z))))
+
+(define c-app
+  (lambda (f)
+    (f (f 0))))
+
+(define c-special
+  (lambda (f y)
+    (if (null? y)
+      (f (list y))
+      (f (car y)))))
+
+(define over?
+  (lambda (w tree)
+    (letrec ((traverse
+	       (lambda (tree)
+		 (let ((t (if (pair? tree)
+			    (+ (traverse (car tree)) (traverse (cdr tree)))
+			    tree)))
+		   (if (> t w)
+		     (exit #t)
+		     t)))))
+      (begin (traverse tree) #f))))
+
+(define y
+  (lambda (f)
+    ((lambda (x) (f (lambda (y) ((x x) y))))
+     (lambda (x) (f (lambda (y) ((x x) y)))))))
