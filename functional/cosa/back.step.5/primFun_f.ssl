@@ -1,0 +1,213 @@
+/*****************************************************************************
+ * $isP1If$ ($isP2If$): 1st (2nd) argument of a prim fun appl is an IF exp. 
+ * $p1If$ ($p2If$) pulls 1st (2nd) IF argument out of a primitive fun appl.
+ *****************************************************************************/
+BOOL isP1If(exp e, conDesSet cds) {
+    with (e) (
+	FunCall(i,ExpList2(If(e1,e2,e3),ExpList0)):
+	    isConTest(i,cds)||isDe(i,cds),
+
+	Neg(If(e1,e2,e3)): true,
+	Sum(If(e11,e12,e13),e2): true,
+	Diff(If(e11,e12,e13),e2): true,
+	Prod(If(e11,e12,e13),e2): true,
+	Quot(If(e11,e12,e13),e2): true,
+	Less(If(e11,e12,e13),e2): true,
+	LessEqual(If(e11,e12,e13),e2): true,
+	Greater(If(e11,e12,e13),e2): true,
+	GreaterEqual(If(e11,e12,e13),e2): true,
+	Not(If(e1,e2,e3)): true,
+	And(If(e11,e12,e13),e2): true,
+	Or(If(e11,e12,e13),e2): true,
+	Equal(If(e11,e12,e13),e2): true,
+	NotEqual(If(e11,e12,e13),e2): true,
+
+	*: false
+	)
+    };
+
+# define P1IF2(p) If(e11,p(e12,e2),p(e13,e2))
+exp p1If(exp e, conDesSet cds) {
+    with (e) (
+	FunCall(i,ExpList2(If(e1,e2,e3),ExpList0)): 
+	  isConTest(i,cds)||isDe(i,cds)
+	  ? If(e1,FunCall(i,ExpList2(e2,ExpList0)),
+		  FunCall(i,ExpList2(e3,ExpList0)))
+	  : e,
+
+	Neg(If(e11,e12,e13)): If(e11,Neg(e12),Neg(e13)),
+	Not(If(e11,e12,e13)): If(e11,Not(e12),Not(e13)),
+	Sum(If(e11,e12,e13),e2): P1IF2(Sum),
+	Diff(If(e11,e12,e13),e2): P1IF2(Diff),
+	Prod(If(e11,e12,e13),e2): P1IF2(Prod),
+	Quot(If(e11,e12,e13),e2): P1IF2(Quot),
+	Less(If(e11,e12,e13),e2): P1IF2(Less),
+	LessEqual(If(e11,e12,e13),e2): P1IF2(LessEqual),
+	Greater(If(e11,e12,e13),e2): P1IF2(Greater),
+	GreaterEqual(If(e11,e12,e13),e2): P1IF2(GreaterEqual),
+	And(If(e11,e12,e13),e2): P1IF2(And),
+	Or(If(e11,e12,e13),e2): P1IF2(Or),
+	Equal(If(e11,e12,e13),e2): P1IF2(Equal),
+	NotEqual(If(e11,e12,e13),e2): P1IF2(NotEqual),
+
+	*: e
+	)
+    };
+
+BOOL isP2If (exp e) {
+    with (e) (
+	Sum(e1,If(e21,e22,e23)): true,
+	Diff(e1,If(e21,e22,e23)): true,
+	Prod(e1,If(e21,e22,e23)): true,
+	Quot(e1,If(e21,e22,e23)): true,
+	Less(e1,If(e21,e22,e23)): true,
+	LessEqual(e1,If(e21,e22,e23)): true,
+	Greater(e1,If(e21,e22,e23)): true,
+	GreaterEqual(e1,If(e21,e22,e23)): true,
+	And(e1,If(e21,e22,e23)): true,
+	Or(e1,If(e21,e22,e23)): true,
+	Equal(e1,If(e21,e22,e23)): true,
+	NotEqual(e1,If(e21,e22,e23)): true,
+
+	*: false
+	)
+    };
+
+# define P2IF2(p) If(e21,p(e1,e22),p(e1,e23))
+exp p2If (exp e) {
+    with (e) (
+	Sum(e1,If(e21,e22,e23)): P2IF2(Sum),
+	Diff(e1,If(e21,e22,e23)): P2IF2(Diff),
+	Prod(e1,If(e21,e22,e23)): P2IF2(Prod),
+	Quot(e1,If(e21,e22,e23)): P2IF2(Quot),
+	Less(e1,If(e21,e22,e23)): P2IF2(Less),
+	LessEqual(e1,If(e21,e22,e23)): P2IF2(LessEqual),
+	Greater(e1,If(e21,e22,e23)): P2IF2(Greater),
+	GreaterEqual(e1,If(e21,e22,e23)): P2IF2(GreaterEqual),
+	And(e1,If(e21,e22,e23)): P2IF2(And),
+	Or(e1,If(e21,e22,e23)): P2IF2(Or),
+	Equal(e1,If(e21,e22,e23)): P2IF2(Equal),
+	NotEqual(e1,If(e21,e22,e23)): P2IF2(NotEqual),
+
+	*: e
+	)
+    };
+
+/*****************************************************************************
+ * $isP1Let ($isP2Let$): 1st (2nd) argument of a prim fun appl is an LET exp. 
+ * $p1Let$ ($p2Let$) pulls 1st (2nd) LET argument out of a primitive fun appl.
+ *****************************************************************************/
+BOOL isP1Let (exp e, conDesSet cds) {
+    with (e) (
+	FunCall(i,ExpList2(Let(v,e1,e2),ExpList0)):
+	    isConTest(i,cds)||isDe(i,cds),
+
+	Neg(Let(v,e11,e12)): true,
+	Sum(Let(v,e11,e12),e2): true,
+	Diff(Let(v,e11,e12),e2): true,
+	Prod(Let(v,e11,e12),e2): true,
+	Quot(Let(v,e11,e12),e2): true,
+	Less(Let(v,e11,e12),e2): true,
+	LessEqual(Let(v,e11,e12),e2): true,
+	Greater(Let(v,e11,e12),e2): true,
+	GreaterEqual(Let(v,e11,e12),e2): true,
+
+	Not(Let(v,e11,e12)): true,
+	And(Let(v,e11,e12),e2): true,
+	Or(Let(v,e11,e12),e2): true,
+	Equal(Let(v,e11,e12),e2): true,
+	NotEqual(Let(v,e11,e12),e2): true,
+
+	*: false
+	)
+    };
+
+exp p1Let (exp e, conDesSet cds) {
+    with (e) (
+	FunCall(i,ExpList2(Let(v,e1,e2),ExpList0)): 
+	  isConTest(i,cds)||isDe(i,cds)
+	  ? Let(v,e1,FunCall(i,ExpList2(e2,ExpList0)))
+	  : e,
+
+	Neg(Let(v,e11,e12)): Let(v,e11,Neg(e12)),
+	Sum(Let(v,e11,e12),e2): Let(v,e11,Sum(e12,e2)),
+	Diff(Let(v,e11,e12),e2): Let(v,e11,Diff(e12,e2)),
+	Prod(Let(v,e11,e12),e2): Let(v,e11,Prod(e12,e2)),
+	Quot(Let(v,e11,e12),e2): Let(v,e11,Quot(e12,e2)),
+	Less(Let(v,e11,e12),e2): Let(v,e11,Less(e12,e2)),
+	LessEqual(Let(v,e11,e12),e2): Let(v,e11,LessEqual(e12,e2)),
+	Greater(Let(v,e11,e12),e2): Let(v,e11,Greater(e12,e2)),
+	GreaterEqual(Let(v,e11,e12),e2): Let(v,e11,GreaterEqual(e12,e2)),
+	Not(Let(v,e11,e12)): Let(v,e11,Not(e12)),
+	And(Let(v,e11,e12),e2): Let(v,e11,And(e12,e2)),
+	Or(Let(v,e11,e12),e2): Let(v,e11,Or(e12,e2)),
+	Equal(Let(v,e11,e12),e2): Let(v,e11,Equal(e12,e2)),
+	NotEqual(Let(v,e11,e12),e2): Let(v,e11,NotEqual(e12,e2)),
+
+	*: e
+	)
+    };
+
+BOOL isP2Let (exp e) {
+    with (e) (
+	Sum(e1,Let(v,e21,e22)): true,
+	Diff(e1,Let(v,e21,e22)): true,
+	Prod(e1,Let(v,e21,e22)): true,
+	Quot(e1,Let(v,e21,e22)): true,
+	Less(e1,Let(v,e21,e22)): true,
+	LessEqual(e1,Let(v,e21,e22)): true,
+	Greater(e1,Let(v,e21,e22)): true,
+	GreaterEqual(e1,Let(v,e21,e22)): true,
+	And(e1,Let(v,e21,e22)): true,
+	Or(e1,Let(v,e21,e22)): true,
+	Equal(e1,Let(v,e21,e22)): true,
+	NotEqual(e1,Let(v,e21,e22)): true,
+
+	*: false
+	)
+    };
+
+exp p2Let (exp e) {
+    with (e) (
+	Sum(e1,Let(v,e21,e22)): Let(v,e21,Sum(e1,e22)),
+	Diff(e1,Let(v,e21,e22)): Let(v,e21,Diff(e1,e22)),
+	Prod(e1,Let(v,e21,e22)): Let(v,e21,Prod(e1,e22)),
+	Quot(e1,Let(v,e21,e22)): Let(v,e21,Quot(e1,e22)),
+	Less(e1,Let(v,e21,e22)): Let(v,e21,Less(e1,e22)),
+	LessEqual(e1,Let(v,e21,e22)): Let(v,e21,LessEqual(e1,e22)),
+	Greater(e1,Let(v,e21,e22)): Let(v,e21,Greater(e1,e22)),
+	GreaterEqual(e1,Let(v,e21,e22)): Let(v,e21,GreaterEqual(e1,e22)),
+	And(e1,Let(v,e21,e22)): Let(v,e21,And(e1,e22)),
+	Or(e1,Let(v,e21,e22)): Let(v,e21,Or(e1,e22)),
+	Equal(e1,Let(v,e21,e22)): Let(v,e21,Equal(e1,e22)),
+	NotEqual(e1,Let(v,e21,e22)): Let(v,e21,NotEqual(e1,e22)),
+
+	*: e
+	)
+    };
+
+/*****************************************************************************
+ * $isPrimFun$ tests if $e$ is a primitive funtion application.
+ *****************************************************************************/
+BOOL isPrimFun(exp e, conDesSet cds) {
+    with (e) (
+	FunCall(i,ExpList2(e1,ExpList0)): isConTest(i,cds)||isDe(i,cds),
+
+	Neg(e1): true,
+	Sum(e1,e2): true,
+	Diff(e1,e2): true,
+	Prod(e1,e2): true,
+	Quot(e1,e2): true,
+	Less(e1,e2): true,
+	LessEqual(e1,e2): true,
+	Greater(e1,e2): true,
+	GreaterEqual(e1,e2): true,
+	Not(e1): true,
+	And(e1,e2): true,
+	Or(e1,e2): true,
+	Equal(e1,e2): true,
+	NotEqual(e1,e2): true,
+
+	*: false
+	)
+  }; 
