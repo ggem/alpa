@@ -1,0 +1,5 @@
+/* Foreign functions in scheme */
+
+program scheme scheme_hilite(program p);
+program scheme scheme_eliminate(program p);
+program scheme scheme_unhilite(program p);
