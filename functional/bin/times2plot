@@ -1,0 +1,81 @@
+#!/bin/tcsh -f
+
+set procs = (insertsort mergesort nreverse product reverse selectsort union)
+
+onintr end
+
+if ($0 =~ /*) then
+   set ALPAdir = ${0:h}/..
+else
+   set ALPAdir = `pwd`/${0:h}/..
+endif
+
+set schemedir = ${ALPAdir}/scheme
+#set hosts = (ribbontail	drum		leopard)
+#set archs = ("Ultra 5"	"Ultra 5"	"SPARCstation 5")
+#set hosts = ($hosts:q rough	school			thorntail)
+#set archs = ($archs:q "Ultra 1" "Enterprise 450"	"Ultra 10") 
+set hosts = (piano)
+set archs = ("Ultra 10")
+set tmp1  = /tmp/$user.$$.1
+set tmp2  = /tmp/$user.$$.2
+set plotfile = plot.txt
+set q = '"'
+
+foreach proc ($procs)
+   echo -n "$proc"
+   set newdir = $ALPAdir/plots/$proc
+   mkdir -p $newdir
+   cd $newdir
+   set plotcmd = ""
+   set hhosts = ($hosts) ; set aarchs = ($archs:q)
+   while ($#hhosts > 0)
+      set host = $hhosts[1]
+      set arch = $aarchs[1]:q
+      set computed = $ALPAdir/hosts/$host/computed.txt
+      set measured = $ALPAdir/hosts/$host/measured.txt
+      echo -n " $host"
+      set plotcmd = "$plotcmd $q${host}:computed$q t $q$arch computed$q , "
+      set plotcmd = "$plotcmd $q${host}:measured$q t $q$arch measured$q "
+      if ($#hhosts > 1) set plotcmd = "$plotcmd , "
+       sed -n \
+ 	-e "/^;/d" \
+ 	-e "s/://" \
+ 	-e "s/[()]//g" \
+ 	-e "s/ \. .*//" \
+ 	-e "s/iota-//g" \
+ 	-e "s/list-//g" \
+ 	-e "s/ \([0-9]*\) [0-9]*/ \1/" \
+ 	-e "s/^$proc //p" \
+ 	$measured > $newdir/${host}:measured
+       sed -n \
+ 	-e "/^;/d" \
+ 	-e "s/://" \
+ 	-e "s/[()]//g" \
+ 	-e "s/ milliseconds//" \
+ 	-e "s/^$proc //p" \
+ 	$computed > $newdir/${host}:computed
+      shift hhosts ; shift aarchs
+   end
+   echo " plotting..."
+   echo "set title $q$proc$q"			>  $plotfile
+   echo "set xlabel ${q}input size$q"		>> $plotfile
+   echo "set ylabel ${q}time (milliseconds)$q"	>> $plotfile
+   echo "set data style linespoints"		>> $plotfile
+## echo "set key 27,19"				>> $plotfile
+   echo "set size 0.7,0.7"			>> $plotfile
+   echo "set terminal postscript eps"		>> $plotfile
+   echo "set output $q$proc-0.eps$q"		>> $plotfile
+   echo "plot [0:2000] $plotcmd"		>> $plotfile
+   echo "set output $q$proc-1.eps$q"		>> $plotfile
+   echo "plot [0:60] $plotcmd"			>> $plotfile
+   echo "set output $q$proc-2.eps$q"		>> $plotfile
+   echo "plot [40:220] $plotcmd"		>> $plotfile
+   echo "set output $q$proc-3.eps$q"		>> $plotfile
+   echo "plot [400:2200] $plotcmd"		>> $plotfile
+   gnuplot $plotfile
+end
+
+end:
+  /bin/rm -rf $tmp1 $tmp2
+  exit 0
