@@ -1,0 +1,19 @@
+#!/bin/tcsh -f
+
+set progs = (isort mrgsort nrevers reverse selsort union)
+set descr = ("insertion sort" "merge sort" "reverse w/append" \
+		"reverse" "selection sort" "set union")
+
+while ($#progs > 0)
+  gnuplot << ENDPLOT
+	set title "$descr[1]"
+	set xlabel "input size"
+	set ylabel "time (milliseconds)"
+	set data style linespoints
+	set size 0.45, 0.45
+	set terminal postscript eps
+	set output "plot.$progs[1].eps"
+	plot [0:1000] "plot.$progs[1].computed" t "computed", "plot.$progs[1].measured" t "measured"
+ENDPLOT
+  shift progs ; shift descr;
+  end
