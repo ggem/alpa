@@ -1,0 +1,87 @@
+/**
+ *    Step Counting transformation
+ **/
+
+program step_counting(program p) {
+  with (p) (
+    Prog(fundefs, condesset, e):
+      Prog(step_counting_fundefs(fundefs), condesset, e)
+    )
+  };
+
+
+funDefs step_counting_fundefs(funDefs fl) {
+  with (fl) (
+    FunDefs0() : fl,
+    FunDefs2(f,fl): 
+      FunDefs2(step_counting_fundef(f),FunDefs2(f,step_counting_fundefs(fl)))
+    )
+  };
+
+
+
+funDef step_counting_fundef(funDef f) {
+  with (f) (
+    VoidFunDef(): f,
+    FunDefinition(IdNull, args, body):
+      FunDefinition(Ident("cost_nonamed"), args, step_counting_exp(body)),
+    FunDefinition(Ident(name), args, body):
+      FunDefinition(Ident("cost_"#name), args, step_counting_exp(body))
+    )
+  };
+
+exp step_counting_exps(expList l) {
+  with (l) (
+    ExpList0(): VoidExp,
+    ExpList2(x,ExpList0): step_counting_exp(x),
+    ExpList2(x,l2): Sum(step_counting_exp(x),step_counting_exps(l2)),
+    )
+  };
+
+#define TWOEXPSOP(op,cost) \
+  op(x2,x3): Sum(VarId(cost),Sum(step_counting_exp(x2),step_counting_exp(x3)))
+
+exp step_counting_exp(exp x) {
+  with (x) (
+    VoidExp(): x,
+    VarId(ID): VarId("COST_VARREF"),
+    IntOp(n): VarId("COST_CONSTANT"),
+    BoolOp(n): VarId("COST_CONSTANT"),
+    Quote(QUOTE): VarId("COST_CONSTANT"),
+    ListNil(): VarId("COST_CONSTANT"),
+    Not(x2): Sum(VarId("COST_BOOLEANOP"),step_counting_exp(x2)),
+    Neg(x2): Sum(VarId("COST_NEGATION"),step_counting_exp(x2)),
+    ListCar(x2): Sum(VarId("COST_CAR"),step_counting_exp(x2)),
+    ListCdr(x2): Sum(VarId("COST_CDR"),step_counting_exp(x2)),
+    ListNull(x2): Sum(VarId("COST_NULL"),step_counting_exp(x2)),
+    ListAtom(x2): Sum(VarId("COST_NULL"),step_counting_exp(x2)),
+    TWOEXPSOP(Sum, "COST_ADDITION"),
+    TWOEXPSOP(Diff,"COST_ADDITION"),
+    TWOEXPSOP(Prod,"COST_MULTIPLICATION"),
+    TWOEXPSOP(Quot,"COST_DIVISION"),
+    TWOEXPSOP(Less,"COST_BOOLEANOP"),
+    TWOEXPSOP(LessEqual,"COST_BOOLEANOP"),
+    TWOEXPSOP(Greater,"COST_BOOLEANOP"),
+    TWOEXPSOP(GreaterEqual,"COST_BOOLEANOP"),
+    TWOEXPSOP(And,"COST_BOOLEANOP"),
+    TWOEXPSOP(Or,"COST_BOOLEANOP"),
+    TWOEXPSOP(Equal,"COST_BOOLEANOP"),
+    TWOEXPSOP(NotEqual,"COST_BOOLEANOP"),
+    TWOEXPSOP(ListCons,"COST_CONS"),
+    TWOEXPSOP(ListEq,"COST_BOOLEANOP"),
+
+    FunCall(IdNull, args): x,
+    FunCall(Ident(f), args): Sum(VarId("COST_FUNCALL"),
+				 Sum(FunCall(Ident("cost_"#f),args),
+				     step_counting_exps(args))),
+    If(x2,x3,x4): Sum(VarId("COST_COND"),
+		      Sum(step_counting_exp(x2),
+			  If(x2,step_counting_exp(x3),step_counting_exp(x4)))),
+
+    Let(IdNull,x2,x3): x,
+    Let(Ident(ID),x2,x3): Let(Ident(ID),x2,
+			      Sum(VarId("COST_BINDING"),
+				  Sum(step_counting_exp(x2),
+				      step_counting_exp(x3)))),
+    )
+  };
