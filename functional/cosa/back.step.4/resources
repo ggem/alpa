@@ -1,0 +1,13 @@
+timebound.styleDefinition: \
+Text : cour; \n\
+largest : times,14, +bold; \n\
+new-text-buffers : <*,gray95,*,*> ; \n\
+old-text-buffers : <*,gray95,*,*> ; \n\
+new-characters : cour, +bold <royalblue1,gray75,*,*> ; \n\
+text-buffers-other-view : helvetica, <palevioletred4,*,*,*> ; \n\
+Keyword : +bold <blue3,*,*,*>; \n\
+Placeholder : <red,*,*,*>; \n\
+Binding : <blue,*,*,*>; \n\
+MarkedCPS : <yellow,*,*,*>; \n\
+Hilite : +bold <red,*,*,*>; \n\
+default: cour, 14, <blue3,*,blue3,wheat>;
