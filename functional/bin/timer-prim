@@ -1,0 +1,49 @@
+#!/bin/tcsh -f
+
+set hosts = (leopard rough drum ribbontail thorntail school)
+set hosts = (piano)
+cd ${0:h}/..
+set ALPAdir = `cwd`
+set schemedir = ${ALPAdir}/scheme
+
+foreach host ($hosts)
+  set newdir = ${ALPAdir}/hosts/$host
+  set tmp = $newdir/prims.txt
+  mkdir -p $newdir
+  echo -n "$host "
+  rsh $host exec nice -15 scheme $schemedir/timer-prim.ss \
+	\< /dev/null \
+	\| tee $tmp &
+end
+
+
+wait # wait for all hosts to finish
+  
+
+#regexp for a digit an a non-digit
+set d = \\\(\[0-9\]\\\)
+set n = \\\(\[\^0-9\]\\\)
+
+
+foreach host ($hosts)
+  echo $host
+  set newdir = ${ALPAdir}/hosts/$host
+  set filename = $newdir/prims.ss
+  set tmp = $newdir/prims.txt
+  set all = $newdir/prims-all.ss
+  set computed = $newdir/computed.txt
+  egrep define $tmp > $filename
+  echo | scheme $filename $schemedir/get-averages.ss  > $all
+  echo | scheme $filename $ALPAdir/tests/get-costs.ss > $computed
+end
+
+# sed -n -e "/==>/d" \
+#	 -e "s/$n$d\./\10\2./g" \
+#	 -e "s/$n$d$d\./\10\2\3./g" \
+#	 -e "s/$n$d$d$d\./\10\2\3\4./g" \
+#	 -e "s/$n$d$d$d$d\./\10\2\3\4\5./g" \
+#	 -e "s/$n$d$d$d$d$d\./\10\2\3\4\5\6./g" \
+#	 -e "s/$n$d$d$d$d$d$d\./\10\2\3\4\5\6\7./g" \
+#	 -e "s/$d$d$d$d$d$d\./.\1\2\3\4\5\6/g" \
+#	 -e "s/nano/milli/" \
+#	 -e "/define/p" $tmp > $filename
