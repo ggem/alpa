@@ -1,0 +1,189 @@
+/*****************************************************************************
+ * Abstract syntax for expression $exp$ (with $FunCall,If,Let$) and $expList$
+ *****************************************************************************/
+exp	:	VoidExp ( )
+	|	VarId ( ID )
+	|	FunCall (id expList)
+	|	If(exp exp exp)
+	|	Let(id exp exp)
+	;
+list expList;
+expList	:	ExpList0 ()
+	|	ExpList2 (exp expList)
+	;
+
+/*****************************************************************************
+ * Minimal parenthesization
+ *****************************************************************************/
+exp	{ inherited INT precedence; };
+# define PP1(n) {\
+	local STR lp;\
+	local STR rp;\
+	exp$2.precedence = (n);\
+	lp = ($$.precedence > (n)) ? "(" : "";\
+	rp = ($$.precedence > (n)) ? ")" : "";\
+	}
+# define PP2(n) {\
+	local STR lp;\
+	local STR rp;\
+	exp$2.precedence = (n);\
+	exp$3.precedence = (n)+1;\
+	lp = ($$.precedence > (n)) ? "(" : "";\
+	rp = ($$.precedence > (n)) ? ")" : "";\
+	}
+# define PP3(n) {\
+	local STR lp;\
+	local STR rp;\
+	exp$2.precedence = (n);\
+	exp$3.precedence = (n);\
+	lp = ($$.precedence > (n)) ? "(" : "";\
+	rp = ($$.precedence > (n)) ? ")" : "";\
+	}
+# define PP4(n) {\
+	local STR lp;\
+	local STR rp;\
+	exp$2.precedence = (n);\
+	exp$3.precedence = (n);\
+	exp$4.precedence = (n);\
+	lp = ($$.precedence > (n)) ? "(" : "";\
+	rp = ($$.precedence > (n)) ? ")" : "";\
+	}
+
+exp	:	If PP4(0)
+	|	Let PP3(0)
+	;
+
+expList	:	ExpList2 { exp.precedence = 0; }
+	;
+
+/*****************************************************************************
+ * Attribution for expression $exp$ and $expList$
+ *****************************************************************************/
+exp	{ inherited funDefs funEnv; };
+exp	{ inherited conDesSet conEnv; };
+exp	{ synthesized idList idCollect; };
+exp	{ inherited idList idEnv; };
+expList	{ inherited funDefs funEnv; };
+expList	{ inherited conDesSet conEnv; };
+expList { synthesized idList idCollect; };
+expList { inherited idList idEnv; };
+
+exp	:	VoidExp {
+			exp.idCollect = IdList0(); }
+
+	|	VarId {	exp.idCollect = IdList2(Ident(ID),IdList0); }
+
+	|	FunCall{expList.funEnv = exp.funEnv; 
+			expList.conEnv = exp.conEnv;
+
+			exp.idCollect = expList.idCollect;
+			expList.idEnv = exp.idEnv; }
+
+	|	If {	exp$2.funEnv = exp$1.funEnv;
+			exp$3.funEnv = exp$1.funEnv; 
+			exp$4.funEnv = exp$1.funEnv;
+			exp$2.conEnv = exp$1.conEnv;
+			exp$3.conEnv = exp$1.conEnv; 
+			exp$4.conEnv = exp$1.conEnv;
+
+			exp$1.idCollect = unionIdList(exp$2.idCollect,
+				unionIdList(exp$3.idCollect,exp$4.idCollect));
+			exp$2.idEnv = exp$1.idEnv;
+			exp$3.idEnv = exp$1.idEnv;
+			exp$4.idEnv = exp$1.idEnv; }
+	|	Let {	exp$2.funEnv = exp$1.funEnv;
+			exp$3.funEnv = exp$1.funEnv;
+			exp$2.conEnv = exp$1.conEnv;
+			exp$3.conEnv = exp$1.conEnv;
+
+			exp$1.idCollect = 
+				addInIdSet(id,unionIdList(exp$2.idCollect,
+							  exp$3.idCollect));
+			exp$2.idEnv = exp$1.idEnv;
+			exp$3.idEnv = exp$1.idEnv; }
+	;
+
+expList	:	ExpList0 {
+			expList.idCollect = IdList0(); }
+
+	|	ExpList2 {
+			exp.funEnv = expList$1.funEnv;
+			expList$2.funEnv = expList$1.funEnv;
+			exp.conEnv = expList$1.conEnv; 
+			expList$2.conEnv = expList$1.conEnv;
+
+			expList$1.idCollect = 
+				unionIdList(exp.idCollect,expList$2.idCollect);
+			exp.idEnv = expList$1.idEnv;
+			expList$2.idEnv = expList$1.idEnv; }
+	;
+
+/*****************************************************************************
+ * Concrete input syntax for expression $exp$ and $expList$
+ *****************************************************************************/
+Exp	{ synthesized exp abs; };
+ExpList { synthesized expList abs; };
+
+exp	~ Exp.abs;
+expList ~ ExpList.abs;
+
+Exp	::=	(EXP_PLACEHOLDER)
+			{ Exp.abs = VoidExp; }
+	|	('(' Exp ')')
+			{ Exp$1.abs = Exp$2.abs; }
+	|	(ID)	{ Exp.abs = VarId(ID); }
+	|	(Id '(' ExpList ')')
+			{ Exp.abs = FunCall( Id.abs, ExpList.abs); }
+	|	(IF Exp THEN Exp ELSE Exp prec IF)
+			{ Exp$1.abs = If(Exp$2.abs, Exp$3.abs, Exp$4.abs); }
+	|	(LET Id '=' Exp IN Exp END)
+			{ Exp$1.abs = Let(Id.abs, Exp$2.abs, Exp$3.abs); }
+	;
+ExpList	::=	()		{ ExpList.abs = ExpList0; }
+	|	(Exp)		{ ExpList.abs = Exp.abs :: ExpList0; }
+	|	(Exp ',' ExpList)
+				{ ExpList$1.abs = Exp.abs :: ExpList$2.abs; }
+	;
+
+/*****************************************************************************
+ * Unparsing for expression $exp$ and $expList$
+ *****************************************************************************/
+exp	:	VoidExp		[ ^ ::= PH(exp) ]
+	|	VarId		[ ^ ::= ^ ]
+	|	FunCall		[ ^ ::= @ "(%[%L" @ "%b%])" ]
+	|	If		[ ^ ::= PT(lp)
+					   "%{%L"
+					   KW1(if) "%[%L" @ "%b%] "
+					   KW1(then) "%[%n" @ "%]%n"
+					   KW1(else) "%[%n" @ "%]"
+					   "%b%}"
+					   PT(rp) ]
+	|	Let 		[ ^ ::= PT(lp)
+					    "%{%L"
+					    KW1(let) @ " = %[%L" @ "%b%]%n"
+					    KW1(in) "%[%n" @ "%]%n"
+					    KW(end)
+					    "%b%}"
+					    PT(rp) ]
+	;
+expList	:	ExpList0	[ ^ ::= "" ]
+	|	ExpList2	[ ^ ::= ^ [", %c"] @ ]
+	;
+
+/*****************************************************************************
+ * Template commands for expression $exp$ 
+ *****************************************************************************/
+transform exp
+	on "funCall" <exp> : FunCall(<id>,<expList>),
+	on "if"	     <exp> : If(<exp>,<exp>,<exp>),
+	on "switch-conditions" If(a,If(b,e1,e2),e3):
+	                       If(b,If(a,e1,e3),If(a,e2,e3)),
+	on "switch-conditions" If(a,e1,If(b,e2,e3)):
+	                       If(b,If(a,e1,e2),If(a,e1,e3)),
+	on "let"     <exp> : Let(<id>, <exp>, <exp>),
+	on "switch-bindings" Let(a,e1,Let(b,e2,e3))
+				when (countVarOccur(a,e2)==0):
+	                     Let(b,e2,Let(a,e1,e3))
+	;
+/*****************************************************************************/
+
