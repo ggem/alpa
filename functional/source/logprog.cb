@@ -1,0 +1,1460 @@
+A#S#C#S#S#L#V#3
+$operators 
+Prog 3 0 0
+FunDefs2 2 0 0
+FunDefinition 3 0 0
+Ident 1 0 0
+_Str 0 0 1
+IdList0 0 0 0
+FunCall 2 5 0
+ExpList2 2 4 0
+ExpList0 0 4 0
+IdList2 2 0 0
+Let 3 7 0
+ListCar 1 5 0
+ListCdr 1 5 0
+VarId 1 5 0
+If 3 7 0
+ListNull 1 5 0
+ListCons 2 5 0
+ListNil 0 5 0
+ListEq 2 5 0
+ListAtom 1 5 0
+Quote 1 6 0
+BoolOp 1 6 0
+_Bool 0 0 1
+IntOp 1 5 0
+_Int 0 0 1
+Diff 2 7 0
+FunDefs0 0 0 0
+ConDesSetPair 2 0 0
+ConDestructors 3 0 0
+IdNull 0 0 0
+Destructor2 2 0 0
+Destructor0 0 0 0
+ConDesSetIsEmpty 0 0 0
+$object 
+1121 180
+0
+1
+2
+3
+4
++7 logprog
+5
+6
+3
+4
++8 run_test
+7
+6
+3
+4
++9 create_kb
+8
+8
+1
+2
+3
+4
++9 add_lemma
+9
+3
+4
++4 term
+9
+3
+4
++2 kb
+5
+10
+3
+4
++4 name
+11
+11
+12
+13
+4
++4 term
+14
+15
+13
+4
++2 kb
+16
+16
+13
+4
+=
+16
+13
+4
+<
+17
+17
+14
+18
+13
+4
+=
+11
+11
+13
+4
+;
+16
+16
+13
+4
+=
+16
+13
+4
+<
+12
+11
+13
+4
+;
+12
+13
+4
+;
+16
+11
+13
+4
+;
+6
+3
+4
++9 add_lemma
+7
+13
+4
+=
+7
+12
+13
+4
++2 kb
+8
+1
+2
+3
+4
++13 add_lemma_lst
+9
+3
+4
++2 kb
+9
+3
+4
++3 lst
+5
+14
+15
+13
+4
++3 lst
+13
+4
++2 kb
+6
+3
+4
++13 add_lemma_lst
+7
+6
+3
+4
++9 add_lemma
+7
+11
+13
+4
+>
+7
+13
+4
+=
+8
+7
+12
+13
+4
+>
+8
+1
+2
+3
+4
++10 get_lemmas
+9
+3
+4
++4 name
+9
+3
+4
++2 kb
+5
+14
+15
+13
+4
++2 kb
+17
+14
+18
+13
+4
++4 name
+11
+11
+13
+4
+<
+12
+11
+13
+4
+<
+6
+3
+4
++10 get_lemmas
+7
+13
+4
+<
+7
+12
+13
+4
+=
+8
+1
+2
+3
+4
++11 apply_subst
+9
+3
+4
++5 alist
+9
+3
+4
++4 term
+5
+14
+19
+13
+4
++4 term
+10
+3
+4
++8 new_term
+6
+3
+4
++4 assq
+7
+13
+4
+=
+7
+13
+4
++5 alist
+8
+14
+13
+4
+=
+12
+13
+4
+=
+13
+4
+>
+16
+11
+13
+4
+>
+6
+3
+4
++15 apply_subst_lst
+7
+13
+4
+<
+7
+12
+13
+4
++4 term
+8
+1
+2
+3
+4
++15 apply_subst_lst
+9
+3
+4
++5 alist
+9
+3
+4
++3 lst
+5
+14
+15
+13
+4
++3 lst
+17
+16
+6
+3
+4
++11 apply_subst
+7
+13
+4
++5 alist
+7
+11
+13
+4
+=
+8
+6
+3
+4
++15 apply_subst_lst
+7
+13
+4
+<
+7
+12
+13
+4
+>
+8
+1
+2
+3
+4
++6 falsep
+9
+3
+4
++1 x
+9
+3
+4
++3 lst
+5
+14
+6
+3
+4
++6 equal?
+7
+13
+4
++1 x
+7
+20
+4
++5 "(f)"
+8
+21
+22
+1 T
+6
+3
+4
++6 member
+7
+13
+4
+=
+7
+13
+4
++3 lst
+8
+1
+2
+3
+4
++13 one_way_unify
+9
+3
+4
++5 term1
+9
+3
+4
++5 term2
+5
+6
+3
+4
++14 one_way_unify1
+7
+13
+4
++5 term1
+7
+13
+4
++5 term2
+7
+17
+8
+1
+2
+3
+4
++14 one_way_unify1
+9
+3
+4
++5 term1
+9
+3
+4
++5 term2
+9
+3
+4
++11 unify_subst
+5
+14
+19
+13
+4
++5 term2
+10
+3
+4
++8 new_term
+6
+3
+4
++4 assq
+7
+13
+4
+=
+7
+13
+4
++11 unify_subst
+8
+14
+13
+4
+=
+6
+3
+4
++6 equal?
+7
+13
+4
++5 term1
+7
+12
+13
+4
+?
+8
+16
+16
+13
+4
+@
+13
+4
++5 term1
+13
+4
+>
+14
+19
+13
+4
+<
+21
+22
+1 F
+14
+18
+11
+13
+4
+<
+11
+13
+4
+A
+6
+3
+4
++18 one_way_unify1_lst
+7
+12
+13
+4
+=
+7
+12
+13
+4
++5 term2
+7
+13
+4
+@
+8
+21
+22
+1 F
+1
+2
+3
+4
++18 one_way_unify1_lst
+9
+3
+4
++4 lst1
+9
+3
+4
++4 lst2
+9
+3
+4
++11 unify_subst
+5
+14
+15
+13
+4
++4 lst1
+13
+4
++11 unify_subst
+10
+3
+4
++5 subst
+6
+3
+4
++14 one_way_unify1
+7
+11
+13
+4
+>
+7
+11
+13
+4
++4 lst2
+7
+13
+4
+>
+8
+14
+13
+4
+=
+6
+3
+4
++18 one_way_unify1_lst
+7
+12
+13
+4
+@
+7
+12
+13
+4
+<
+7
+13
+4
+>
+8
+21
+22
+1 F
+1
+2
+3
+4
++7 rewrite
+9
+3
+4
++4 term
+9
+3
+4
++2 kb
+5
+14
+19
+13
+4
++4 term
+13
+4
+;
+6
+3
+4
++19 rewrite_with_lemmas
+7
+16
+11
+13
+4
+<
+6
+3
+4
++12 rewrite_args
+7
+12
+13
+4
+=
+7
+13
+4
++2 kb
+8
+7
+6
+3
+4
++10 get_lemmas
+7
+11
+13
+4
+?
+7
+13
+4
+<
+8
+7
+13
+4
+<
+8
+1
+2
+3
+4
++12 rewrite_args
+9
+3
+4
++3 lst
+9
+3
+4
++2 kb
+5
+14
+15
+13
+4
++3 lst
+17
+16
+6
+3
+4
++7 rewrite
+7
+11
+13
+4
+<
+7
+13
+4
++2 kb
+8
+6
+3
+4
++12 rewrite_args
+7
+12
+13
+4
+>
+7
+13
+4
+<
+8
+1
+2
+3
+4
++19 rewrite_with_lemmas
+9
+3
+4
++4 term
+9
+3
+4
++3 lst
+9
+3
+4
++2 kb
+5
+14
+15
+13
+4
++3 lst
+13
+4
++4 term
+10
+3
+4
++11 unify_subst
+6
+3
+4
++13 one_way_unify
+7
+13
+4
+=
+7
+11
+12
+11
+13
+4
+>
+8
+14
+13
+4
+<
+6
+3
+4
++7 rewrite
+7
+6
+3
+4
++11 apply_subst
+7
+13
+4
+>
+7
+11
+12
+12
+11
+13
+4
+@
+8
+7
+13
+4
++2 kb
+8
+6
+3
+4
++19 rewrite_with_lemmas
+7
+13
+4
+A
+7
+12
+13
+4
+B
+7
+13
+4
+<
+8
+1
+2
+3
+4
++9 create_kb
+5
+6
+3
+4
++13 add_lemma_lst
+7
+17
+7
+20
+4
++6512 "((equal (compile form) (reverse (codegen (optimize form) (nil)))) (equal (eqp x y) (equal (fix x) (fix y))) (equal (greaterp x y) (lessp y x)) (equal (lesseqp x y) (not (lessp y x))) (equal (greatereqp x y) (not (lessp x y))) (equal (boolean x) (or (equal x (t)) (equal x (f)))) (equal (iff x y) (and (implies x y) (implies y x))) (equal (even1 x) (if (zerop x) (t) (odd (1- x)))) (equal (countps- l pred) (countps-loop l pred (zero))) (equal (fact- i) (fact-loop i 1)) (equal (reverse- x) (reverse-loop x (nil))) (equal (divides x y) (zerop (remainder y x))) (equal (assume-true var alist) (cons (cons var (t)) alist)) (equal (assume-false var alist) (cons (cons var (f)) alist)) (equal (tautology-checker x) (tautologyp (normalize x) (nil))) (equal (falsify x) (falsify1 (normalize x) (nil))) (equal (prime x) (and (not (zerop x)) (not (equal x (add1 (zero)))) (prime1 x (1- x)))) (equal (and p q) (if p (if q (t) (f)) (f))) (equal (or p q) (if p (t) (if q (t) (f)) (f))) (equal (not p) (if p (f) (t))) (equal (implies p q) (if p (if q (t) (f)) (t))) (equal (fix x) (if (numberp x) x (zero))) (equal (if (if a b c) d e) (if a (if b d e) (if c d e))) (equal (zerop x) (or (equal x (zero)) (not (numberp x)))) (equal (plus (plus x y) z) (plus x (plus y z))) (equal (equal (plus a b) (zero)) (and (zerop a) (zerop b))) (equal (difference x x) (zero)) (equal (equal (plus a b) (plus a c)) (equal (fix b) (fix c))) (equal (equal (zero) (difference x y)) (not (lessp y x))) (equal (equal x (difference x y)) (and (numberp x) (or (equal x (zero)) (zerop y)))) (equal (meaning (plus-tree (append x y)) a) (plus (meaning (plus-tree x) a) (meaning (plus-tree y) a))) (equal (meaning (plus-tree (plus-fringe x)) a) (fix (meaning x a))) (equal (append (append x y) z) (append x (append y z))) (equal (reverse (append a b)) (append (reverse b) (reverse a))) (equal (times x (plus y z)) (plus (times x y) (times x z))) (equal (times (times x y) z) (times x (times y z))) (equal (equal (times x y) (zero)) (or (zerop x) (zerop y))) (equal (exec (append x y) pds envrn) (exec y (exec x pds envrn) envrn)) (equal (mc-flatten x y) (append (flatten x) y)) (equal (member x (append a b)) (or (member x a) (member x b))) (equal (member x (reverse y)) (member x y)) (equal (length (reverse x)) (length x)) (equal (member a (intersect b c)) (and (member a b) (member a c))) (equal (nth (zero) i) (zero)) (equal (exp i (plus j k)) (times (exp i j) (exp i k))) (equal (exp i (times j k)) (exp (exp i j) k)) (equal (reverse-loop x y) (append (reverse x) y)) (equal (reverse-loop x (nil)) (reverse x)) (equal (count-list z (sort-lp x y)) (plus (count-list z x) (count-list z y))) (equal (equal (append a b) (append a c)) (equal b c)) (equal (plus (remainder x y) (times y (quotient x y))) (fix x)) (equal (power-eval (big-plus1 l i base) base) (plus (power-eval l base) i)) (equal (power-eval (big-plus x y i base) base) (plus i (plus (power-eval x base) (power-eval y base)))) (equal (remainder y 1) (zero)) (equal (lessp (remainder x y) y) (not (zerop y))) (equal (remainder x x) (zero)) (equal (lessp (quotient i j) i) (and (not (zerop i)) (or (zerop j) (not (equal j 1))))) (equal (lessp (remainder x y) x) (and (not (zerop y)) (not (zerop x)) (not (lessp x y)))) (equal (power-eval (power-rep i base) base) (fix i)) (equal (power-eval (big-plus (power-rep i base) (power-rep j base) (zero) base) base) (plus i j)) (equal (gcd x y) (gcd y x)) (equal (nth (append a b) i) (append (nth a i) (nth b (difference i (length a))))) (equal (difference (plus x y) x) (fix y)) (equal (difference (plus y x) x) (fix y)) (equal (difference (plus x y) (plus x z)) (difference y z)) (equal (times x (difference c w)) (difference (times c x) (times w x))) (equal (remainder (times x z) z) (zero)) (equal (difference (plus b (plus a c)) a) (plus b c)) (equal (difference (add1 (plus y z)) z) (add1 y)) (equal (lessp (plus x y) (plus x z)) (lessp y z)) (equal (lessp (times x z) (times y z)) (and (not (zerop z)) (lessp x y))) (equal (lessp y (plus x y)) (not (zerop x))) (equal (gcd (times x z) (times y z)) (times z (gcd x y))) (equal (value (normalize x) a) (value x a)) (equal (equal (flatten x) (cons y (nil))) (and (nlistp x) (equal x y))) (equal (listp (gopher x)) (listp x)) (equal (samefringe x y) (equal (flatten x) (flatten y))) (equal (equal (greatest-factor x y) (zero)) (and (or (zerop y) (equal y 1)) (equal x (zero)))) (equal (equal (greatest-factor x y) 1) (equal x 1)) (equal (numberp (greatest-factor x y)) (not (and (or (zerop y) (equal y 1)) (not (numberp x))))) (equal (times-list (append x y)) (times (times-list x) (times-list y))) (equal (prime-list (append x y)) (and (prime-list x) (prime-list y))) (equal (equal z (times w z)) (and (numberp z) (or (equal z (zero)) (equal w 1)))) (equal (greatereqpr x y) (not (lessp x y))) (equal (equal x (times x y)) (or (equal x (zero)) (and (numberp x) (equal y 1)))) (equal (remainder (times y x) y) (zero)) (equal (equal (times a b) 1) (and (not (equal a (zero))) (not (equal b (zero))) (numberp a) (numberp b) (equal (1- a) (zero)) (equal (1- b) (zero)))) (equal (lessp (length (delete x l)) (length l)) (member x l)) (equal (sort2 (delete x l)) (delete x (sort2 l))) (equal (dsort x) (sort2 x)) (equal (length (cons x1 (cons x2 (cons x3 (cons x4 (cons x5 (cons x6 x7))))))) (plus 6 (length x7))) (equal (difference (add1 (add1 x)) 2) (fix x)) (equal (quotient (plus x (plus x y)) 2) (plus x (quotient y 2))) (equal (sigma (zero) i) (quotient (times i (add1 i)) 2)) (equal (plus x (add1 y)) (if (numberp y) (add1 (plus x y)) (add1 x))) (equal (equal (difference x y) (difference z y)) (if (lessp x y) (not (lessp y z)) (if (lessp z y) (not (lessp y x)) (equal (fix x) (fix z))))) (equal (meaning (plus-tree (delete x y)) a) (if (member x y) (difference (meaning (plus-tree y) a) (meaning x a)) (meaning (plus-tree y) a))) (equal (times x (add1 y)) (if (numberp y) (plus x (times x y)) (fix x))) (equal (nth (nil) i) (if (zerop i) (nil) (zero))) (equal (last (append a b)) (if (listp b) (last b) (if (listp a) (cons (car (last a)) b) b))) (equal (equal (lessp x y) z) (if (lessp x y) (equal t z) (equal f z))) (equal (assignment x (append a b)) (if (assignedp x a) (assignment x a) (assignment x b))) (equal (car (gopher x)) (if (listp x) (car (flatten x)) (zero))) (equal (flatten (cdr (gopher x))) (if (listp x) (cdr (flatten x)) (cons (zero) (nil)))) (equal (quotient (times y x) y) (if (zerop y) (zero) (fix x))) (equal (get j (set i val mem)) (if (eqp j i) val (get j mem))))"
+8
+1
+2
+3
+4
++10 tautologyp
+9
+3
+4
++1 x
+9
+3
+4
++8 true_lst
+9
+3
+4
++9 false_lst
+5
+14
+6
+3
+4
++5 truep
+7
+13
+4
++1 x
+7
+13
+4
++8 true_lst
+8
+21
+22
+1 T
+14
+6
+3
+4
++6 falsep
+7
+13
+4
+=
+7
+13
+4
++9 false_lst
+8
+21
+22
+1 F
+14
+19
+13
+4
+>
+21
+22
+1 F
+14
+18
+11
+13
+4
+>
+13
+4
++3 'if
+14
+6
+3
+4
++5 truep
+7
+11
+12
+13
+4
+@
+7
+13
+4
+?
+8
+6
+3
+4
++10 tautologyp
+7
+11
+12
+12
+13
+4
+A
+7
+13
+4
+@
+7
+13
+4
+>
+8
+14
+6
+3
+4
++6 falsep
+7
+11
+12
+13
+4
+B
+7
+13
+4
+?
+8
+6
+3
+4
++10 tautologyp
+7
+11
+12
+12
+12
+13
+4
+C
+7
+13
+4
+B
+7
+13
+4
+@
+8
+14
+6
+3
+4
++10 tautologyp
+7
+11
+12
+12
+13
+4
+D
+7
+16
+11
+12
+13
+4
+D
+13
+4
+C
+7
+13
+4
+A
+8
+6
+3
+4
++10 tautologyp
+7
+11
+12
+12
+12
+13
+4
+E
+7
+13
+4
+D
+7
+16
+11
+12
+13
+4
++1 x
+13
+4
+C
+8
+21
+22
+1 F
+21
+22
+1 F
+1
+2
+3
+4
++5 tautp
+9
+3
+4
++1 x
+9
+3
+4
++2 kb
+5
+6
+3
+4
++10 tautologyp
+7
+6
+3
+4
++7 rewrite
+7
+13
+4
++1 x
+7
+13
+4
++2 kb
+8
+7
+17
+7
+17
+8
+1
+2
+3
+4
++8 run_test
+9
+3
+4
++2 kb
+5
+6
+3
+4
++5 tautp
+7
+6
+3
+4
++11 apply_subst
+7
+20
+4
++210 "((x f (plus (plus a b) (plus c (zero)))) (y f (times (times a b) (plus c d))) (z f (reverse (append (append a b) (nil)))) (u equal (plus a b) (difference x y)) (w lessp (remainder a b) (member a (length b))))"
+7
+20
+4
++99 "(implies (and (implies x y) (and (implies y z) (and (implies z u) (implies u w)))) (implies x w))"
+8
+7
+13
+4
++2 kb
+8
+1
+2
+3
+4
++16 trans_of_implies
+9
+3
+4
++1 n
+5
+16
+13
+4
++8 'implies
+16
+6
+3
+4
++17 trans_of_implies1
+7
+13
+4
++1 n
+8
+16
+16
+13
+4
+=
+16
+23
+24
+1 0
+16
+13
+4
+;
+17
+17
+1
+2
+3
+4
++17 trans_of_implies1
+9
+3
+4
++1 n
+5
+14
+6
+3
+4
++6 equal?
+7
+13
+4
++1 n
+7
+23
+24
+1 1
+8
+16
+13
+4
++8 'implies
+16
+23
+24
+1 0
+16
+23
+24
+1 1
+17
+16
+13
+4
++4 'and
+16
+16
+13
+4
+<
+16
+25
+13
+4
+=
+23
+24
+1 1
+16
+13
+4
+=
+17
+16
+6
+3
+4
++17 trans_of_implies1
+7
+25
+13
+4
+>
+23
+24
+1 1
+8
+17
+1
+2
+3
+4
++5 truep
+9
+3
+4
++1 x
+9
+3
+4
++3 lst
+5
+14
+6
+3
+4
++6 equal?
+7
+13
+4
++1 x
+7
+20
+4
++5 "(t)"
+8
+21
+22
+1 T
+6
+3
+4
++6 member
+7
+13
+4
+=
+7
+13
+4
++3 lst
+8
+1
+2
+3
+4
++6 equal?
+9
+3
+4
++4 exp1
+9
+3
+4
++4 exp2
+5
+14
+19
+13
+4
++4 exp1
+14
+19
+13
+4
++4 exp2
+18
+13
+4
+<
+13
+4
++4 exp2
+21
+22
+1 F
+14
+19
+13
+4
+<
+21
+22
+1 F
+14
+6
+3
+4
++6 equal?
+7
+11
+13
+4
+>
+7
+11
+13
+4
+=
+8
+6
+3
+4
++6 equal?
+7
+12
+13
+4
+?
+7
+12
+13
+4
+>
+8
+21
+22
+1 F
+1
+2
+3
+4
++4 assq
+9
+3
+4
++4 item
+9
+3
+4
++3 lst
+5
+14
+15
+13
+4
++3 lst
+21
+22
+1 F
+14
+18
+13
+4
++4 item
+11
+11
+13
+4
+<
+11
+13
+4
+<
+6
+3
+4
++4 assq
+7
+13
+4
+<
+7
+12
+13
+4
+=
+8
+1
+2
+3
+4
++6 member
+9
+3
+4
++4 item
+9
+3
+4
++3 lst
+5
+14
+15
+13
+4
++3 lst
+21
+22
+1 F
+14
+6
+3
+4
++6 equal?
+7
+11
+13
+4
+<
+7
+13
+4
++4 item
+8
+21
+22
+1 T
+6
+3
+4
++6 member
+7
+13
+4
+<
+7
+12
+13
+4
+>
+8
+26
+27
+28
+29
+29
+30
+29
+31
+32
+6
+3
+4
++12 cost_logprog
+8
