@@ -1,0 +1,55 @@
+/*****************************************************************************
+ * Abstract syntax for constuctor set $conDesSet$, $conDes$, and $des$
+ * For $ConDestructors (id id des)$:
+ *	$id$ is the constructor,
+ *	$id$ is the test for the corresponding constructor,
+ *	$des$ is the corresponding sequence of destructors.
+ *****************************************************************************/
+list des;
+des	:	Destructor0 ( )
+	|	Destructor2 ( id des )
+	;
+conDes	:	ConDestructors ( id id des )
+	;
+list conDesSet;
+conDesSet
+	:	ConDesSetIsEmpty ( )
+	|	ConDesSetPair ( conDes conDesSet );
+
+/*****************************************************************************
+ * Concret input syntax for constuctor set $conDesSet$, $conDes$, and $des$
+ *****************************************************************************/
+Des	{ synthesized des abs; };
+ConDes	{ synthesized conDes abs; };
+ConDesSet { synthesized conDesSet abs; };
+
+des	~	Des.abs;
+conDes	~	ConDes.abs;
+conDesSet ~	ConDesSet.abs;
+
+Des	::=	( Id )	{ Des.abs = Id.abs :: Destructor0; }
+	|	( Id ',' Des )
+			{ Des$1.abs = Destructor2(Id.abs, Des$2.abs); }
+	;
+ConDes	::=	( Id ':' '(' Id ')' Des )
+			{ ConDes.abs = ConDestructors(Id$1.abs, 
+						      Id$2.abs, Des.abs); }
+	;
+ConDesSet ::=	( ConDes ';' ) 
+			{ ConDesSet.abs = ConDes.abs :: ConDesSetIsEmpty; }
+	|	( ConDes ';' ConDesSet )
+			{ ConDesSet$1.abs = ConDes.abs :: ConDesSet$2.abs; }
+	;
+
+/*****************************************************************************
+ * Unparsing for constuctor set $conDesSet$, $conDes$, and $des$
+ *****************************************************************************/
+des	:	Destructor0	[ ^ ::= ]
+	|	Destructor2	[ ^ : @ [", %c"] @ ]
+	;
+conDes	:	ConDestructors	[ ^ ::= @ " : (" @ ") " @]
+	;
+conDesSet
+	:	ConDesSetIsEmpty[ ^ ::= ]
+	|	ConDesSetPair	[ ^ : ^ ";%n" @ ]
+	;
