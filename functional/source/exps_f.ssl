@@ -1,0 +1,212 @@
+/*****************************************************************************
+ * $isVar$ tests if an expression is a variable.
+ *****************************************************************************/
+BOOL isVar(exp e) {
+  with (e) (
+    VarId(ID): true,
+    *: false
+    )
+  };
+
+/*****************************************************************************
+ * $eqExp$ tests if two expressions are equal modulo renaming of bound vars.
+ *****************************************************************************/
+BOOL eqExp(exp e1, exp e2) {
+    let il=unionIdList(freeIdsInExp(e1),freeIdsInExp(e2));
+	exp1=renameBdIdsInExp(e1,il);
+	il1=unionIdList(il,idsInExp(exp1))
+    in( eqGoodExp(exp1,renameBdIdsInExp(e2,il1)) )
+    };
+# define EQGOODEXP1(p) \
+    with (e2) ( \
+	p(e21): eqGoodExp(e11,e21), \
+	*:  false \
+    )
+# define EQGOODEXP2(p) \
+    with (e2) ( \
+	p(e21,e22): eqGoodExp(e11,e21) && eqGoodExp(e12,e22), \
+	*:  false \
+    )
+BOOL eqGoodExp(exp e1, exp e2) {
+    with (e1) (
+	VoidExp: false,					/* should not happen */
+	VarId(ID): e2==e1,
+
+	IntOp(INT): e2==e1,
+	BoolOp(BOOL): e2==e1,
+
+	Neg(e11): EQGOODEXP1(Neg),
+	Sum(e11,e12): EQGOODEXP2(Sum),
+	Diff(e11,e12): EQGOODEXP2(Diff),
+	Prod(e11,e12): EQGOODEXP2(Prod),
+	Quot(e11,e12): EQGOODEXP2(Quot),
+	Less(e11,e12): EQGOODEXP2(Less),
+	LessEqual(e11,e12): EQGOODEXP2(LessEqual),
+	Greater(e11,e12): EQGOODEXP2(Greater),
+	GreaterEqual(e11,e12): EQGOODEXP2(GreaterEqual),
+	Not(e11): EQGOODEXP1(Not),
+	And(e11,e12): EQGOODEXP2(And),
+	Or(e11,e12): EQGOODEXP2(Or),
+	Equal(e11,e12): EQGOODEXP2(Equal),
+	NotEqual(e11,e12): EQGOODEXP2(NotEqual),
+
+	FunCall(IdNull,ps): false,			/* should not happen */
+	FunCall(Ident(i1),ps1):
+	    with (e2) (
+		FunCall(Ident(i2),ps2):
+		    i1==i2 ? eqGoodExpList(ps1,ps2) : false,
+		*: false
+	    ),
+	If(e11,e12,e13):
+	    with (e2) (
+		If(e21,e22,e23):
+		    eqGoodExp(e11,e21)&&eqGoodExp(e12,e22)&&eqGoodExp(e13,e23),
+		*: false
+	    ),
+	Let(IdNull,e11,e12): false,			/* should not happen */
+	Let(Ident(i1),e11,e12):
+	    with (e2) (
+		Let(Ident(i2),e21,e22): 
+		    !eqGoodExp(e11,e21) ? false 
+		    : i1==i2 ? eqGoodExp(e12,e22)
+		    : eqGoodExp(e12,stExp(e22,Ident(i2),VarId(i1))),
+		*: false
+	    ),
+	x: false,			/* INCORRECT,  TO CHANGE LATER */
+	)
+    };
+
+BOOL eqGoodExpList (expList l1, expList l2) {
+    with (l1) (
+	ExpList0: l1==l2,
+	ExpList2(e1,l11):
+	    with (l2) (
+		ExpList0: false,
+		ExpList2(e2,l21): eqGoodExp(e1,e2) && eqGoodExpList(l11,l21)
+		)
+	)
+    };
+
+/*****************************************************************************
+ * rename bound variables in $e$ so that they are not in id list $il$
+ *****************************************************************************/
+# define RENAMEBDIDSINEXP2(p) \
+    let exp1=renameBdIdsInExp(e1,il) \
+    in( p(exp1, renameBdIdsInExp(e2,unionIdList(il,idsInExp(exp1)))) )
+
+exp renameBdIdsInExp(exp e, idList il) {
+    with (e) (
+	VoidExp: e,					/* should not happen */
+	VarId(ID): e,
+
+	IntOp(INT): e,
+	BoolOp(BOOL): e,
+
+	Neg(e1): Neg(renameBdIdsInExp(e1,il)),
+	Sum(e1,e2): RENAMEBDIDSINEXP2(Sum),
+	Diff(e1,e2): RENAMEBDIDSINEXP2(Diff),
+	Prod(e1,e2): RENAMEBDIDSINEXP2(Prod),
+	Quot(e1,e2): RENAMEBDIDSINEXP2(Quot),
+	Less(e1,e2): RENAMEBDIDSINEXP2(Less),
+	LessEqual(e1,e2): RENAMEBDIDSINEXP2(LessEqual),
+	Greater(e1,e2): RENAMEBDIDSINEXP2(Greater),
+	GreaterEqual(e1,e2): RENAMEBDIDSINEXP2(GreaterEqual),
+	Not(e1): Not(renameBdIdsInExp(e1,il)),
+	And(e1,e2): RENAMEBDIDSINEXP2(And),
+	Or(e1,e2): RENAMEBDIDSINEXP2(Or),
+	Equal(e1,e2): RENAMEBDIDSINEXP2(Equal),
+	NotEqual(e1,e2): RENAMEBDIDSINEXP2(NotEqual),
+
+	FunCall(IdNull,ps): e,				/* should not happen */
+	FunCall(Ident(ID),ps): FunCall(Ident(ID), renameBdIdsInExpList(ps,il)),
+
+	If(e1,e2,e3): 
+	    let exp1 = renameBdIdsInExp(e1,il); 
+		il1 = unionIdList(il,idsInExp(exp1));
+		exp2 = renameBdIdsInExp(e2,il1)
+	    in( If(exp1, exp2,
+		   renameBdIdsInExp(e3,unionIdList(il1,idsInExp(exp2)))) ),
+
+	Let(IdNull,e1,e2): e,				/* should not happen */
+	Let(Ident(ID),e1,e2): 
+	    let newID = getNewName(ID,il); 
+		il0 = addInIdSet(Ident(newID),il);
+		exp1 = renameBdIdsInExp(e1,il0);
+	    in( Let(Ident(newID), exp1,
+		    renameBdIdsInExp(stExp(e2,Ident(ID),VarId(newID)),
+				     unionIdList(il0,idsInExp(exp1)))) ),
+	x: e,			/* INCORRECT,  TO CHANGE LATER */
+	)
+      
+    };
+
+expList renameBdIdsInExpList (expList l, idList il) {
+    with (l) (
+	ExpList0: ExpList0,
+	ExpList2(e,l1):
+	  let exp=renameBdIdsInExp(e,il) 
+	  in( ExpList2(exp,
+		renameBdIdsInExpList(l1,unionIdList(il,idsInExp(exp)))) )
+	)
+    };
+
+/*****************************************************************************
+ * auxiliary functions on $expList$:
+ * $unionExpList(l1,l2)$ appends $l2$ on $l1$, removing from $l2$ elem in $l1$
+ * $restExpList(l1,l2)$ returns the list of elems in $l2$ that are not in $l1$
+ * $inExpList(el)$ test if element $e$ is in the list $l$.
+ * $toExpSet(l)$ returns list of elems in $l$, but each elem occur only once
+ * $stExpListLast(l,e)$ replaces the last exp in expList $l$ with exp $e$.
+ *****************************************************************************/
+expList unionExpList(expList l1, expList l2) {
+    l1 @ restExpList(l1,l2)
+    };
+
+expList restExpList(expList l1, expList l2) {
+    with (l2) (
+	ExpList0: ExpList0,
+	ExpList2(e,l21): 
+	    ( inExpList(e,l1) ) 
+	      ? restExpList(l1,l21) 
+	      : ExpList2(e, restExpList(l1,l21)),
+	)
+    };
+
+BOOL inExpList(exp e, expList l) {
+    with (l) (
+	ExpList0: false,
+	ExpList2(e1,l1): (e==e1) ? true : inExpList(e,l1)
+	)
+    };
+
+expList toExpSet(expList l) {
+    with (l) (
+	ExpList0: ExpList0,
+	ExpList2(e,l1): 
+	    ExpList2(e, toExpSet(restExpList(ExpList2(e,ExpList0),l1)))
+	)
+    };
+
+expList stExpListLast(expList l, exp e) {
+    with (l) (
+	ExpList0: ExpList0,				/* should not happen */
+	ExpList2(e1,l1): 
+	    with (l1) (
+		ExpList0: ExpList2(e, ExpList0),
+		*: ExpList2(e1,stExpListLast(l1,e))
+		)
+	)
+    };
+
+/*****************************************************************************
+ * given a list of ids, return the corresponding list of expressions
+ *****************************************************************************/
+expList idListToExpList(idList l) {
+    with (l) (
+	IdList0: ExpList0,
+	IdList2(IdNull,l1): 				/* should not happen */
+	    ExpList2(VoidExp, idListToExpList(l1)),
+	IdList2(Ident(ID),l1): 
+	    ExpList2(VarId(ID), idListToExpList(l1))
+	)
+    };
