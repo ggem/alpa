@@ -1,0 +1,53 @@
+/*
+ *  Hilite initial expression
+ */
+
+transform exp
+  on "Show Initial Exp" e : let i=initial_exp(e) in (subst(e,i,Hilite(i))),
+  on "Hide Initial Exp" e : unhilite(e)
+  ;
+
+
+
+/*
+ *  Unhilite expression
+ */
+
+exp unhilite(exp e) {
+  with (e) (
+    VoidExp():   e,
+    Constant(*): e,
+    Quote(*):	 e,
+    VarRef(*):   e,
+    Lambda(id,body): Lambda(id,unhilite(body)),
+    App(rator,rands):App(unhilite(rator),unhilitel(rands)),
+    If(e1,e2,e3):    If(unhilite(e1),unhilite(e2),unhilite(e3)),
+    Let(b,e1):	     Let(unhiliteb(b),unhilite(e1)),
+    LetRec(b,e1):    LetRec(unhiliteb(b),unhilite(e1)),
+    SetBang(id,e1):  SetBang(id,unhilite(e1)),
+    Begin(e1,e2):    Begin(unhilite(e1),unhilite(e2)),
+    PrimApp(op,rand):PrimApp(op,unhilitel(rand)),
+    HalfCPS(k,e1,e2):HalfCPS(k,unhilite(e1),e2),
+    Hilite(e1):	     unhilite(e1)
+    )
+  };
+
+
+expList unhilitel(expList l) {
+  with (l) (
+    ExpList0(): l,
+    ExpList2(e,l2): ExpList2(unhilite(e),unhilitel(l2))
+    )
+  };
+
+
+bindings unhiliteb(bindings l) {
+  with (l) (
+    BindList0(): l,
+    BindList2(b,l2):
+      with (b) (
+	VoidBinding(): BindList2(b,unhiliteb(l2)),
+	Bind(id,e): BindList2(Bind(id,unhilite(e)),unhiliteb(l2))
+        )
+    )
+  };
